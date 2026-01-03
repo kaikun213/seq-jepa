@@ -16,8 +16,8 @@ dataset:
   no_blur: false
   action_norm: true
   use_rel_latents: false
-  subset_train: 20000
-  subset_val: 2000
+  subset_train: 50000
+  subset_val: 10000
   subset_seed: 42
   batch_size: 128
   num_workers: 4

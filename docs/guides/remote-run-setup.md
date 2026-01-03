@@ -51,7 +51,7 @@ If you're behind a Zscaler proxy, you need to configure SSL certificates for Pyt
 
 ### Quick Setup
 
-1. **Add Zscaler certificate to certifi bundle:**
+1. **Activate the Python env you will run `vastai` from**, then add the Zscaler certificate to that env's certifi bundle:
    ```bash
    ./fix_ssl_certs.sh
    ```
@@ -67,7 +67,11 @@ If you're behind a Zscaler proxy, you need to configure SSL certificates for Pyt
 
 ### Python 3.13 SSL Strictness Issue
 
-**Note:** Python 3.13 has stricter SSL certificate validation. If you still see SSL errors after adding the Zscaler cert, you may need to:
+**Note:** Python 3.13 has stricter SSL certificate validation. If you see errors like:
+
+`Basic Constraints of CA cert not marked critical`
+
+then this is not fixable by just appending the cert. Use Python 3.11 or 3.12, or ask IT for a reissued Zscaler root CA that marks Basic Constraints as critical.
 
 1. **Use Python 3.11 or 3.12 instead:**
    ```bash
