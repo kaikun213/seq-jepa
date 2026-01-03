@@ -1,0 +1,56 @@
+run:
+  name: cifar10-rot-quick
+  seed: 42
+  device: auto
+  mps_fallback: true
+  epochs: 5
+  output_dir: runs/cifar10-rot-quick
+  drop_last: true
+
+dataset:
+  name: cifar10_rot
+  data_root: data
+  seq_len: 3
+  rotations: [0, 90, 180, 270]
+  download: true
+  subset_train: 5000
+  subset_val: 1000
+  subset_seed: 42
+  batch_size: 64
+  num_workers: 0
+
+model:
+  img_size: 32
+  n_channels: 3
+  ema: true
+  ema_decay: 0.996
+  pred_hidden: 1024
+  num_heads: 4
+  num_enc_layers: 3
+  act_cond: 1
+  learn_act_emb: 1
+  act_latentdim: 2
+  act_projdim: 128
+  cifar_resnet: true
+
+optim:
+  lr: 0.001
+  weight_decay: 0.0
+  probe_lr: 0.001
+
+eval:
+  latent_type: rot
+  eval_type: rot
+
+logging:
+  wandb:
+    enabled: true
+    project: seq-jepa-streaming
+    group: local-quick
+    mode: online
+
+gating:
+  linacc_test_min: 20.0
+  r2_test_min: 0.0
+  leakage_linacc_gap_min: 0.0
+  leakage_r2_gap_min: 0.0

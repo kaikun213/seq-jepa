@@ -543,9 +543,6 @@ def train_one_epoch_3diebench(model, train_loader, optimizer, device,
     result["ep_time"] = tot_time
 
     return model, optimizer, result
-model, unlabeled_loader, optimizer, args.num_saccades, args.img_size,
-                                            args.fovea_size, device, args.ema, args.ema_decay, epoch, epochs,
-                                            train_loader=train_loader, test_loader=test_loader, dataset=args.dataset
 
 def train_one_epoch_pls(model, data_loader, optimizer, num_saccades, image_size, fovea_size,
                         device, ema, ema_tau_base, current_epoch, num_epochs, conv_jepa=False, train_loader=None,

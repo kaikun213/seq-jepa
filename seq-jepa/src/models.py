@@ -1444,7 +1444,7 @@ class VICReg_Traj(nn.Module):
                 nn.ReLU(inplace=True),
                 nn.Linear(2048, self.emb_size, bias=False)
             )
-            print("Using MLP projector")
+        print("Using MLP projector")
         self.inv_coeff = inv_coeff
         self.var_coeff = var_coeff
         self.cov_coeff = cov_coeff
@@ -1536,4 +1536,3 @@ class VICReg_Traj(nn.Module):
         )
         
         return loss, z_l, z_c, z_r
-
