@@ -1,0 +1,59 @@
+run:
+  name: cifar100-aug-baseline-remote
+  seed: 42
+  device: auto
+  mps_fallback: true
+  epochs: 10
+  output_dir: runs/remote/cifar100-aug-baseline
+  drop_last: true
+
+dataset:
+  name: cifar100_aug
+  data_root: data
+  seq_len: 3
+  download: true
+  aug: true
+  no_blur: false
+  action_norm: true
+  use_rel_latents: false
+  subset_train: 20000
+  subset_val: 2000
+  subset_seed: 42
+  batch_size: 128
+  num_workers: 4
+
+model:
+  img_size: 32
+  n_channels: 3
+  ema: true
+  ema_decay: 0.996
+  pred_hidden: 1024
+  num_heads: 4
+  num_enc_layers: 3
+  act_cond: 1
+  learn_act_emb: 1
+  act_latentdim: 9
+  act_projdim: 128
+  cifar_resnet: true
+
+optim:
+  lr: 0.001
+  weight_decay: 0.0
+  probe_lr: 0.001
+
+eval:
+  latent_type: aug
+  eval_type: aug
+
+logging:
+  wandb:
+    enabled: true
+    project: seq-jepa-streaming
+    group: remote-baseline
+    mode: online
+
+gating:
+  linacc_test_min: 5.0
+  r2_test_min: 0.05
+  leakage_linacc_gap_min: 0.0
+  leakage_r2_gap_min: 0.0

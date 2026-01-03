@@ -21,6 +21,7 @@ This repo hosts the upstream seq-JEPA code alongside research notes and additive
 - Copy `.env.example` to `.env` and set `WANDB_API_KEY` if you want logging.
 - See `docs/021-metrics-and-gates.md` for metric definitions and gate thresholds.
 - Use the wrapper runner and configs:
-  - `python train.py --config configs/quick/cifar10_rot_smoke.yaml`
-  - `python train.py --config configs/quick/cifar10_rot_quick.yaml`
-  - `python train.py --config configs/quick/cifar10_rot_baseline.yaml`
+  - `python train.py --config configs/quick/cifar100_aug_smoke.yaml`
+  - `python train.py --config configs/quick/cifar100_aug_quick.yaml`
+  - `python train.py --config configs/quick/cifar10_rot_smoke.yaml` (fast fallback)
+  - `python train.py --config configs/quick/cifar10_rot_quick.yaml` (fast fallback)

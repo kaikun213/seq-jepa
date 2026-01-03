@@ -89,6 +89,32 @@ def make_subset(dataset, subset_size, seed):
     return Subset(dataset, indices[:subset_size])
 
 
+def unpack_batch(batch, device, action_norm: bool):
+    import torch
+
+    if len(batch) == 5:
+        views, actions_abs, actions_rel, labels, _ = batch
+    elif len(batch) == 4:
+        views, actions_abs, labels, _ = batch
+        actions_rel = None
+    else:
+        raise ValueError("Unexpected batch structure from dataset.")
+
+    views = views.to(device)
+    actions_abs = actions_abs.to(device)
+    labels = labels.to(device)
+
+    if action_norm:
+        actions_abs = torch.nn.functional.normalize(actions_abs, p=2, dim=1)
+
+    if actions_rel is None:
+        actions_rel = actions_abs[:, 1:] - actions_abs[:, :-1]
+    else:
+        actions_rel = actions_rel.to(device)
+
+    return views, actions_abs, actions_rel, labels
+
+
 def setup_wandb(cfg: dict, run_name: str, output_dir: Path):
     wandb_cfg = cfg.get("logging", {}).get("wandb", {})
     if not wandb_cfg.get("enabled", False):
@@ -239,6 +265,8 @@ def train_one_epoch_local(
     device,
     train_loader,
     ema: bool,
+    action_norm: bool,
+    use_rel_latents: bool,
 ) -> dict:
     import torch
     from sklearn.metrics import accuracy_score
@@ -266,19 +294,17 @@ def train_one_epoch_local(
     leak_lin_loss_sum = 0.0
     leak_act_loss_sum = 0.0
 
-    for batch, actions_abs, actions_rel, labels, _ in train_loader:
-        batch = batch.to(device)
-        actions_abs = actions_abs.to(device)
-        actions_rel = actions_rel.to(device)
-        labels = labels.to(device)
+    for batch in train_loader:
+        batch, actions_abs, actions_rel, labels = unpack_batch(batch, device, action_norm)
 
         optimizer.zero_grad()
+        rel_latents = actions_rel if use_rel_latents else None
         loss, agg_out, z1, z2 = model(
             batch[:, :-1],
             batch[:, -1],
             actions_abs[:, :-1],
             actions_abs[:, -1],
-            rel_latents=actions_rel,
+            rel_latents=rel_latents,
         )
         loss.backward()
         optimizer.step()
@@ -354,6 +380,8 @@ def eval_one_epoch_local(
     leakage_actprobe,
     device,
     val_loader,
+    action_norm: bool,
+    use_rel_latents: bool,
 ) -> dict:
     import torch
     from sklearn.metrics import accuracy_score
@@ -379,18 +407,16 @@ def eval_one_epoch_local(
     leak_act_loss_sum = 0.0
 
     with torch.no_grad():
-        for batch, actions_abs, actions_rel, labels, _ in val_loader:
-            batch = batch.to(device)
-            actions_abs = actions_abs.to(device)
-            actions_rel = actions_rel.to(device)
-            labels = labels.to(device)
+        for batch in val_loader:
+            batch, actions_abs, actions_rel, labels = unpack_batch(batch, device, action_norm)
 
+            rel_latents = actions_rel if use_rel_latents else None
             _, agg_out, z1, z2 = model(
                 batch[:, :-1],
                 batch[:, -1],
                 actions_abs[:, :-1],
                 actions_abs[:, -1],
-                rel_latents=actions_rel,
+                rel_latents=rel_latents,
             )
 
             logits = linprobe(agg_out)
@@ -455,6 +481,7 @@ def main():
     from utils import seed_worker
     from models import SeqJEPA_Transforms
     from experiments.datasets_rot import CIFAR10RotationSequence
+    from experiments.datasets_cifar100_aug import CIFAR100AugSequence
 
     seed = int(run_cfg.get("seed", 42))
     seed_everything(seed)
@@ -466,28 +493,57 @@ def main():
     model_cfg = cfg.get("model", {})
     optim_cfg = cfg.get("optim", {})
 
-    if dataset_cfg.get("name") != "cifar10_rot":
-        raise ValueError("Only dataset.name='cifar10_rot' is supported by this runner.")
-
+    dataset_name = dataset_cfg.get("name", "cifar10_rot")
     seq_len = int(dataset_cfg.get("seq_len", 2))
-    rotations = dataset_cfg.get("rotations", [0, 90, 180, 270])
     data_root = dataset_cfg.get("data_root", str(repo_root / "data"))
     download = bool(dataset_cfg.get("download", True))
-
-    train_ds = CIFAR10RotationSequence(
-        root=data_root,
-        split="train",
-        seq_len=seq_len,
-        rotations=rotations,
-        download=download,
-    )
-    val_ds = CIFAR10RotationSequence(
-        root=data_root,
-        split="test",
-        seq_len=seq_len,
-        rotations=rotations,
-        download=download,
-    )
+    if dataset_name == "cifar10_rot":
+        rotations = dataset_cfg.get("rotations", [0, 90, 180, 270])
+        train_ds = CIFAR10RotationSequence(
+            root=data_root,
+            split="train",
+            seq_len=seq_len,
+            rotations=rotations,
+            download=download,
+        )
+        val_ds = CIFAR10RotationSequence(
+            root=data_root,
+            split="test",
+            seq_len=seq_len,
+            rotations=rotations,
+            download=download,
+        )
+        num_classes = 10
+        act_latentdim_default = len(rotations)
+        action_norm = bool(dataset_cfg.get("action_norm", False))
+        use_rel_latents = bool(dataset_cfg.get("use_rel_latents", True))
+    elif dataset_name == "cifar100_aug":
+        aug = bool(dataset_cfg.get("aug", True))
+        no_blur = bool(dataset_cfg.get("no_blur", False))
+        train_ds = CIFAR100AugSequence(
+            root=data_root,
+            split="train",
+            seq_len=seq_len,
+            download=download,
+            aug=aug,
+            no_blur=no_blur,
+        )
+        val_ds = CIFAR100AugSequence(
+            root=data_root,
+            split="test",
+            seq_len=seq_len,
+            download=download,
+            aug=aug,
+            no_blur=no_blur,
+        )
+        num_classes = 100
+        act_latentdim_default = train_ds.num_params
+        action_norm = bool(dataset_cfg.get("action_norm", True))
+        use_rel_latents = bool(dataset_cfg.get("use_rel_latents", False))
+    else:
+        raise ValueError(
+            "dataset.name must be one of: 'cifar10_rot', 'cifar100_aug'."
+        )
 
     batch_size = int(dataset_cfg.get("batch_size", 32))
     max_steps = run_cfg.get("max_steps")
@@ -525,8 +581,15 @@ def main():
         drop_last=False,
     )
 
-    num_classes = 10
-    act_latentdim = int(model_cfg.get("act_latentdim", len(rotations)))
+    act_latentdim_cfg = model_cfg.get("act_latentdim")
+    if act_latentdim_cfg is None:
+        act_latentdim = int(act_latentdim_default)
+    else:
+        act_latentdim = int(act_latentdim_cfg)
+        if dataset_name == "cifar100_aug" and act_latentdim != int(act_latentdim_default):
+            raise ValueError(
+                "model.act_latentdim must match CIFAR100 augmentation parameter count."
+            )
 
     model = SeqJEPA_Transforms(
         model_cfg.get("img_size", 32),
@@ -597,6 +660,8 @@ def main():
             device,
             train_loader,
             bool(model_cfg.get("ema", False)),
+            action_norm,
+            use_rel_latents,
         )
         val_result = eval_one_epoch_local(
             model,
@@ -606,6 +671,8 @@ def main():
             leakage_actprobe,
             device,
             val_loader,
+            action_norm,
+            use_rel_latents,
         )
         result_row = {**train_result, **val_result}
         result_row.update({

@@ -4,9 +4,9 @@
 - Reproduce seq-JEPA baseline to use as a control.
 
 ## Dataset choices
-- Fast sanity: STL-10 saccades or CIFAR100 with augmentation actions.
+- Baseline: CIFAR-100 with augmentation actions (paper-aligned transforms).
+- Fast sanity: CIFAR-10 rotation sequences (`configs/quick/*`) for quick iteration.
 - Structural: 3DIEBench or closest available equivariance benchmark.
-- Current minimal implementation: CIFAR-10 rotation sequences (`configs/quick/*`) for fast iteration.
 
 ## Measurements
 - Equivariance metric on z_t.

@@ -46,7 +46,19 @@ export PYTORCH_ENABLE_MPS_FALLBACK=1
 
 ## 2) Fast iteration suite (tiny but informative)
 
-### 2.1 CIFAR-10 with discrete rotation actions
+Baseline comparability uses CIFAR-100 augmentation actions; CIFAR-10 rotations stay as the fastest sanity check.
+
+### 2.1 CIFAR-100 augmentation actions (baseline)
+- Views are augmentation-based transforms (crop, color jitter, blur, solarize).
+- Sequence length M+1 = 4 views (three actions) in current configs.
+- Action encoding uses the augmentation parameter vectors.
+
+Why it works:
+- Encoder output should retain augmentation signal (equivariance proxy).
+- Aggregated state should discard augmentation but keep class (invariance proxy).
+- Leakage shows up when z_AGG also predicts augmentation actions.
+
+### 2.2 CIFAR-10 with discrete rotation actions
 - Views are rotations in {0, 90, 180, 270} degrees.
 - Sequence length M+1 = 4 views (three actions) in current configs.
 - Action encoding uses sin/cos for rotation angles (continuous).
@@ -56,11 +68,11 @@ Why it works:
 - Aggregated state should discard pose but keep class (invariance proxy).
 - If both reps perform equally well on both tasks, leakage is happening.
 
-### 2.2 Subset support
+### 2.3 Subset support
 - `subset_train` and `subset_val` select fixed random indices (seeded).
 - This keeps runs short without changing dataset logic.
 
-### 2.3 Standard run modes
+### 2.4 Standard run modes
 Mode A - Smoke
 - subset_train=128, max_steps=20, eval=off
 
@@ -68,16 +80,17 @@ Mode B - Quick
 - subset_train=5000, subset_val=1000, short epochs
 
 Mode C - Baseline-ish
-- larger subset or full CIFAR-10
+- larger subset or full CIFAR-100
 
 CLI pattern:
 ```bash
+python train.py --config configs/quick/cifar100_aug_smoke.yaml
+python train.py --config configs/quick/cifar100_aug_quick.yaml
 python train.py --config configs/quick/cifar10_rot_smoke.yaml
 python train.py --config configs/quick/cifar10_rot_quick.yaml
-python train.py --config configs/quick/cifar10_rot_baseline.yaml
 ```
 
-### 2.4 Local gates (must pass before remote runs)
+### 2.5 Local gates (must pass before remote runs)
 - Smoke: completes without crash, loss finite, `online_linacc_test` above random.
 - Quick: `online_linacc_test` and `online_r2_test` exceed thresholds in config.
 - Gate status is logged to W&B as `gate_pass` with `gate_reasons` in the run summary.
