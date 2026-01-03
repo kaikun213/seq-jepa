@@ -44,3 +44,57 @@
 ## If you hit issues
 - CUDA OOM: lower `dataset.batch_size` to 64.
 - Slow dataloading: increase `dataset.num_workers` to 4-8 on GPU nodes.
+
+## SSL Certificate Setup for Zscaler
+
+If you're behind a Zscaler proxy, you need to configure SSL certificates for Python/conda to work with vastai and other tools.
+
+### Quick Setup
+
+1. **Add Zscaler certificate to certifi bundle:**
+   ```bash
+   ./fix_ssl_certs.sh
+   ```
+
+2. **The script automatically:**
+   - Backs up your current certifi bundle
+   - Adds Zscaler root certificate to the bundle
+   - Shows you the certificate path
+
+3. **Environment variables are set in `~/.zshrc`:**
+   - `SSL_CERT_FILE` - Points to certifi bundle with Zscaler cert
+   - `REQUESTS_CA_BUNDLE` - Same as SSL_CERT_FILE for requests library
+
+### Python 3.13 SSL Strictness Issue
+
+**Note:** Python 3.13 has stricter SSL certificate validation. If you still see SSL errors after adding the Zscaler cert, you may need to:
+
+1. **Use Python 3.11 or 3.12 instead:**
+   ```bash
+   conda create -n py311 python=3.11
+   conda activate py311
+   pip install vastai
+   ```
+
+2. **Or configure network to bypass Zscaler** for specific domains (vast.ai, conda-forge, etc.)
+
+3. **Or use the workaround** (less secure, only for testing):
+   ```bash
+   export PYTHONHTTPSVERIFY=0  # Not recommended for production
+   ```
+
+### Testing SSL Configuration
+
+```bash
+# Test basic SSL
+python3 -c "import requests; print(requests.get('https://www.google.com', timeout=5).status_code)"
+
+# Test vastai
+vastai --help
+```
+
+### Files Created
+
+- `fix_ssl_certs.sh` - Script to add Zscaler cert to certifi bundle
+- `~/Documents/cacert/` - Directory with Zscaler certificates
+- `~/.zshrc` - Updated with SSL environment variables
