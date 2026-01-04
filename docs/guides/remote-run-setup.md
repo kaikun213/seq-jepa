@@ -15,7 +15,7 @@
 
 ## Common prerequisites
 - W&B API key: set `WANDB_API_KEY` or place it in `.env` (loaded by `train.py`).
-- Python env with `requirements.txt` installed.
+- Python env with `requirements.txt` installed (on Vast, the onstart script filters `deepgaze-pytorch` because it is not on PyPI).
 - CIFAR-100 will download into `data/` on first run. If compute nodes have no internet, pre-populate `data/` before submission.
   
 ## Private repo access (Vast.ai)
@@ -27,7 +27,7 @@
 - Suggested instance: 1x GPU (RTX 3060 12GB or A10 24GB), 8 vCPU, 30-60GB disk.
 - Run:
   - `git clone` the repo
-  - `pip install -r requirements.txt`
+  - `pip install -r requirements.txt` (or remove `deepgaze-pytorch` if it fails)
   - `scripts/vast/run_cifar100_aug_baseline.sh`
 - Optional: run the CIFAR-100 smoke/quick config first to validate the environment.
 
@@ -42,7 +42,7 @@ scripts/vast/launch_cifar100_baseline.sh
 Notes:
 - The script prefers SSH. If you instead want HTTPS, set `GITHUB_TOKEN` and unset `GITHUB_SSH_KEY_PATH`.
 - Default GPU list is `RTX_3060`, `A10`, `RTX_3070`, `RTX_3080`, `RTX_3090`. Override with `VAST_GPU_LIST`.
-- The onstart script clones the repo, installs requirements, and runs the baseline config.
+- The onstart script clones the repo, installs requirements (filtering `deepgaze-pytorch`), and runs the baseline config.
 
 ## SLURM
 - Template: `scripts/slurm/seqjepa_cifar10_rot_baseline.sbatch` (update to CIFAR-100 when needed)
