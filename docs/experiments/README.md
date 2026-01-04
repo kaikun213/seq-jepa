@@ -61,3 +61,4 @@ Each experiment should follow this structure:
 | baseline-smoke | Step 1 | - | ✅ | Smoke test passes |
 | baseline-quick | Step 1 | - | 🔄 | In progress |
 | baseline-cifar100-vast | Step 1 | 2026-01-04 | ✅ | Clean Vast run completed; far below paper metrics |
+| baseline-cifar100-paper | Step 1 | 2026-01-04 | 🔄 | Paper-aligned run in progress |

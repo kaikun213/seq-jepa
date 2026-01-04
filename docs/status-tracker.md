@@ -11,7 +11,7 @@ Last updated: 2026-01-04
 
 | Milestone | Status | Progress | Notes |
 |-----------|--------|----------|-------|
-| M1 (Baseline) | 🟡 In Progress | 90% | Vast CIFAR-100 baseline run complete; gap vs paper |
+| M1 (Baseline) | 🟡 In Progress | 95% | Paper-aligned CIFAR-100 run in progress |
 | M2 (Teacherless) | ⚪ Not Started | 0% | |
 | M3 (CRATE) | ⚪ Not Started | 0% | |
 | M4 (ToST) | ⚪ Not Started | 0% | |
@@ -23,7 +23,7 @@ Last updated: 2026-01-04
 | Step | Status | Blocking Issues |
 |------|--------|-----------------|
 | Step 0 - Repo Setup | ✅ Complete | — |
-| Step 1 - Baseline Repro | 🟡 In Progress | Performance gap vs paper; align protocol |
+| Step 1 - Baseline Repro | 🟡 In Progress | Paper-aligned run in progress; eval pending |
 | Step 2 - Teacherless Rate | ⚪ Pending | Waiting on Step 1 |
 | Step 3 - CRATE Integration | ⚪ Pending | |
 | Step 4 - ToST Streaming | ⚪ Pending | |
@@ -36,6 +36,7 @@ Last updated: 2026-01-04
 - Reorganized documentation structure into subdirectories
 - Set up local git config for private email
 - Ran clean Vast CIFAR-100 baseline; results far below paper targets
+- Started paper-aligned CIFAR-100 run on Vast (long, eval pending)
 
 ### 2026-01-03
 - Smoke and quick runs passing on CIFAR-10 rotations

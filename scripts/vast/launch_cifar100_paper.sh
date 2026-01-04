@@ -12,15 +12,15 @@ fi
 : "${VAST_API_KEY:?Set VAST_API_KEY in .env or env}"
 : "${WANDB_API_KEY:?Set WANDB_API_KEY in .env or env}"
 
-GPU_LIST_DEFAULT='["RTX_3060","A10","RTX_3070","RTX_3080","RTX_3090"]'
+GPU_LIST_DEFAULT='["RTX_4090","A100","A10","RTX_3090"]'
 GPU_LIST="${VAST_GPU_LIST:-$GPU_LIST_DEFAULT}"
-QUERY_DEFAULT="reliability>0.98 num_gpus==1 gpu_name in ${GPU_LIST} gpu_ram>=12 disk_space>=40 inet_down>=50 rented=any"
+QUERY_DEFAULT="reliability>0.98 num_gpus==1 gpu_name in ${GPU_LIST} gpu_ram>=24 disk_space>=80 inet_down>=50 rented=any"
 QUERY="${VAST_QUERY:-$QUERY_DEFAULT}"
 ORDER="${VAST_ORDER:-dph}"
 LIMIT="${VAST_LIMIT:-5}"
 IMAGE="${VAST_IMAGE:-pytorch/pytorch:2.2.2-cuda12.1-cudnn8-runtime}"
-DISK_GB="${VAST_DISK_GB:-40}"
-LABEL="${VAST_LABEL:-seqjepa-cifar100-baseline}"
+DISK_GB="${VAST_DISK_GB:-80}"
+LABEL="${VAST_LABEL:-seqjepa-cifar100-paper}"
 
 GITHUB_SSH_KEY_B64=""
 if [[ -n "${GITHUB_SSH_KEY_PATH:-}" ]]; then
@@ -81,7 +81,7 @@ CREATE_JSON=$(vastai create instance "$OFFER_ID" \
   --disk "$DISK_GB" \
   --label "$LABEL" \
   --ssh --direct \
-  --onstart "$REPO_ROOT/scripts/vast/onstart_cifar100_aug_baseline.sh" \
+  --onstart "$REPO_ROOT/scripts/vast/onstart_cifar100_aug_paper.sh" \
   --env "$ENV_STRING" \
   --api-key "$VAST_API_KEY" \
   --raw)
@@ -96,13 +96,13 @@ fi
 
 echo "Created instance: $INSTANCE_ID"
 
-AUTO_DESTROY="${VAST_AUTO_DESTROY:-1}"
-POLL_SECS="${VAST_POLL_SECS:-60}"
-DONE_PATH="${VAST_DONE_PATH:-/workspace/seq-jepa-streaming/runs/vast_cifar100_baseline.done}"
-FAIL_PATH="${VAST_FAIL_PATH:-/workspace/seq-jepa-streaming/runs/vast_cifar100_baseline.failed}"
+echo "Run is started. Track progress in W&B."
 
-if [[ "$AUTO_DESTROY" != "0" ]]; then
-  echo "Waiting for run completion before destroying instance."
+auto_destroy="${VAST_AUTO_DESTROY:-0}"
+if [[ "$auto_destroy" == "1" ]]; then
+  echo "Auto-destroy enabled; waiting for completion marker."
+  DONE_PATH="${VAST_DONE_PATH:-/workspace/seq-jepa-streaming/runs/vast_cifar100_paper.done}"
+  FAIL_PATH="${VAST_FAIL_PATH:-/workspace/seq-jepa-streaming/runs/vast_cifar100_paper.failed}"
   while true; do
     SSH_INFO=$(vastai show instance "$INSTANCE_ID" --raw --api-key "$VAST_API_KEY" | python -c 'import json,sys; raw=sys.stdin.read().strip();\ntry:\n    data=json.loads(raw)\nexcept json.JSONDecodeError:\n    print(""); sys.exit(0)\nhost=data.get("ssh_host") or ""; port=data.get("ssh_port") or "";\nprint(f"{host} {port}" if host and port else "")'))
     SSH_HOST="${SSH_INFO%% *}"
@@ -118,8 +118,15 @@ if [[ "$AUTO_DESTROY" != "0" ]]; then
         break
       fi
     fi
-    sleep "$POLL_SECS"
+    sleep "${VAST_POLL_SECS:-300}"
   done
+
+  if [[ "${VAST_COPY_RESULTS:-0}" == "1" ]]; then
+    DEST="${VAST_COPY_DEST:-$REPO_ROOT/runs/remote/cifar100-aug-paper}"
+    REMOTE_PATH="/workspace/seq-jepa-streaming/runs/remote/cifar100-aug-paper"
+    mkdir -p "$DEST"
+    scp -r -P "$SSH_PORT" "root@${SSH_HOST}:${REMOTE_PATH}" "$DEST" || true
+  fi
 
   echo "Destroying instance $INSTANCE_ID."
   vastai destroy instance "$INSTANCE_ID" --api-key "$VAST_API_KEY"

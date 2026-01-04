@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import json
+import math
 import os
 import random
 import sys
@@ -189,6 +190,21 @@ def save_metrics(metrics, output_dir: Path) -> None:
             plt.close(fig)
     except Exception:
         pass
+
+
+def adjust_learning_rate(optimizer, lr: float) -> None:
+    for param_group in optimizer.param_groups:
+        param_group["lr"] = lr
+
+
+def cosine_lr(epoch: int, total_epochs: int, base_lr: float, min_lr: float, warmup_epochs: int) -> float:
+    if warmup_epochs > 0 and epoch < warmup_epochs:
+        return base_lr * float(epoch + 1) / float(warmup_epochs)
+    if total_epochs <= 1:
+        return base_lr
+    progress = float(epoch - warmup_epochs) / float(max(total_epochs - warmup_epochs - 1, 1))
+    cosine = 0.5 * (1.0 + math.cos(math.pi * min(max(progress, 0.0), 1.0)))
+    return min_lr + (base_lr - min_lr) * cosine
 
 
 def evaluate_gates(latest: dict, gating_cfg: dict) -> tuple[bool, list[str]]:
@@ -626,7 +642,11 @@ def main():
 
     lr = float(optim_cfg.get("lr", 0.001))
     weight_decay = float(optim_cfg.get("weight_decay", 0.0))
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
+    optim_name = str(optim_cfg.get("name", "adam")).lower()
+    if optim_name == "adamw":
+        optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
+    else:
+        optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
     probe_lr = float(optim_cfg.get("probe_lr", lr))
     optimizer_linprobe = torch.optim.Adam(external_linprobe.parameters(), lr=probe_lr)
     optimizer_equiprobe = torch.optim.Adam(external_equiprobe.parameters(), lr=probe_lr)
@@ -634,6 +654,9 @@ def main():
     optimizer_leakage_act = torch.optim.Adam(leakage_actprobe.parameters(), lr=probe_lr)
 
     epochs = int(run_cfg.get("epochs", 1))
+    scheduler_name = str(optim_cfg.get("scheduler", "")).lower()
+    warmup_epochs = int(optim_cfg.get("warmup_epochs", 0))
+    min_lr = float(optim_cfg.get("min_lr", lr))
     run_name = run_cfg.get("name", Path(args.config).stem)
     output_dir = Path(run_cfg.get("output_dir", str(repo_root / "runs" / run_name)))
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -645,6 +668,9 @@ def main():
 
     metrics = []
     for epoch in range(epochs):
+        if scheduler_name == "cosine":
+            scheduled_lr = cosine_lr(epoch, epochs, lr, min_lr, warmup_epochs)
+            adjust_learning_rate(optimizer, scheduled_lr)
         start_time = time.time()
         train_result = train_one_epoch_local(
             model,
@@ -694,6 +720,21 @@ def main():
             wandb_run.log(result_row, step=epoch)
 
     save_metrics(metrics, output_dir)
+    if run_cfg.get("save_checkpoint", False):
+        ckpt_path = run_cfg.get("checkpoint_path")
+        if ckpt_path:
+            checkpoint_path = Path(ckpt_path)
+        else:
+            checkpoint_path = output_dir / "checkpoints" / "last.pt"
+        checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
+        torch.save(
+            {
+                "model_state": model.state_dict(),
+                "config": cfg,
+                "epoch": epochs,
+            },
+            checkpoint_path,
+        )
 
     if wandb_run and metrics:
         import wandb

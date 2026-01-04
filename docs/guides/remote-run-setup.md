@@ -10,6 +10,7 @@
 
 ## Recommended configs
 - Baseline (CIFAR-100 aug): `configs/remote/cifar100_aug_baseline.yaml`
+- Paper-aligned (CIFAR-100 aug, long): `configs/remote/cifar100_aug_paper.yaml`
 - Shakedown (CIFAR-100 aug): `configs/quick/cifar100_aug_smoke.yaml` or `configs/quick/cifar100_aug_quick.yaml`
 - Optional fast fallback: `configs/quick/cifar10_rot_smoke.yaml` or `configs/quick/cifar10_rot_quick.yaml`
 
@@ -37,6 +38,12 @@ Use the launcher script to search offers and create an instance with the onstart
 ```bash
 export GITHUB_SSH_KEY_PATH=~/.ssh/private_github
 scripts/vast/launch_cifar100_baseline.sh
+```
+
+Paper-aligned run (long, includes frozen-probe eval):
+```bash
+export GITHUB_SSH_KEY_PATH=~/.ssh/private_github
+scripts/vast/launch_cifar100_paper.sh
 ```
 
 Notes:
