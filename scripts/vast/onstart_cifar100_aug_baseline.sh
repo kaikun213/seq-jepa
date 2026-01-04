@@ -27,6 +27,18 @@ else
   exit 1
 fi
 
+if [[ -n "${WANDB_API_KEY:-}" ]]; then
+  {
+    echo "WANDB_API_KEY=${WANDB_API_KEY}"
+    if [[ -n "${WANDB_PROJECT:-}" ]]; then
+      echo "WANDB_PROJECT=${WANDB_PROJECT}"
+    fi
+    if [[ -n "${WANDB_ENTITY:-}" ]]; then
+      echo "WANDB_ENTITY=${WANDB_ENTITY}"
+    fi
+  } >> /etc/environment
+fi
+
 if [[ ! -d "$REPO_DIR" ]]; then
   git clone "$REPO_URL" "$REPO_DIR"
 fi

@@ -43,6 +43,7 @@ Notes:
 - The script prefers SSH. If you instead want HTTPS, set `GITHUB_TOKEN` and unset `GITHUB_SSH_KEY_PATH`.
 - Default GPU list is `RTX_3060`, `A10`, `RTX_3070`, `RTX_3080`, `RTX_3090`. Override with `VAST_GPU_LIST`.
 - The onstart script clones the repo, installs requirements (filtering `deepgaze-pytorch` and `Pillow_SIMD`), and runs the baseline config.
+- The launcher waits for a completion marker and then destroys the instance. Set `VAST_AUTO_DESTROY=0` to keep it running.
 
 ## SLURM
 - Template: `scripts/slurm/seqjepa_cifar10_rot_baseline.sbatch` (update to CIFAR-100 when needed)

@@ -86,13 +86,64 @@ CREATE_JSON=$(vastai create instance "$OFFER_ID" \
   --api-key "$VAST_API_KEY" \
   --raw)
 
-echo "$CREATE_JSON" | python - <<'PY'
+INSTANCE_ID=$(echo "$CREATE_JSON" | python - <<'PY'
 import json, sys
 raw = sys.stdin.read().strip()
 try:
     data = json.loads(raw)
 except json.JSONDecodeError:
-    print(raw)
-    sys.exit(1)
-print(f"Created instance: {data.get('new_contract')}")
+    print("")
+    sys.exit(0)
+print(data.get("new_contract", ""))
 PY
+)
+
+if [[ -z "$INSTANCE_ID" ]]; then
+  echo "Failed to create instance. Raw response:"
+  echo "$CREATE_JSON"
+  exit 1
+fi
+
+echo "Created instance: $INSTANCE_ID"
+
+AUTO_DESTROY="${VAST_AUTO_DESTROY:-1}"
+POLL_SECS="${VAST_POLL_SECS:-60}"
+DONE_PATH="${VAST_DONE_PATH:-/workspace/seq-jepa-streaming/runs/vast_cifar100_baseline.done}"
+FAIL_PATH="${VAST_FAIL_PATH:-/workspace/seq-jepa-streaming/runs/vast_cifar100_baseline.failed}"
+
+if [[ "$AUTO_DESTROY" != "0" ]]; then
+  echo "Waiting for run completion before destroying instance."
+  while true; do
+    SSH_INFO=$(vastai show instance "$INSTANCE_ID" --raw --api-key "$VAST_API_KEY" | python - <<'PY'
+import json, sys
+raw = sys.stdin.read().strip()
+try:
+    data = json.loads(raw)
+except json.JSONDecodeError:
+    print("")
+    sys.exit(0)
+host = data.get("ssh_host") or ""
+port = data.get("ssh_port") or ""
+if host and port:
+    print(f"{host} {port}")
+PY
+)
+    SSH_HOST="${SSH_INFO%% *}"
+    SSH_PORT="${SSH_INFO##* }"
+
+    if [[ -n "$SSH_HOST" && -n "$SSH_PORT" && "$SSH_HOST" != "$SSH_PORT" ]]; then
+      if ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p "$SSH_PORT" "root@${SSH_HOST}" "test -f '$DONE_PATH'"; then
+        echo "Run completed."
+        break
+      fi
+      if ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p "$SSH_PORT" "root@${SSH_HOST}" "test -f '$FAIL_PATH'"; then
+        echo "Run failed."
+        break
+      fi
+    fi
+    sleep "$POLL_SECS"
+  done
+
+  echo "Destroying instance $INSTANCE_ID."
+  vastai destroy instance "$INSTANCE_ID" --api-key "$VAST_API_KEY"
+fi
