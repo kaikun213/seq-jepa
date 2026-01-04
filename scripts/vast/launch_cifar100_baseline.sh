@@ -87,14 +87,22 @@ CREATE_JSON=$(vastai create instance "$OFFER_ID" \
   --raw)
 
 INSTANCE_ID=$(echo "$CREATE_JSON" | python - <<'PY'
-import json, sys
-raw = sys.stdin.read().strip()
+import json
+import re
+import sys
+
+raw = sys.stdin.read()
+instance_id = ""
 try:
-    data = json.loads(raw)
-except json.JSONDecodeError:
-    print("")
-    sys.exit(0)
-print(data.get("new_contract", ""))
+    data = json.loads(raw.strip())
+    instance_id = str(data.get("new_contract", "") or "")
+except Exception:
+    match = re.search(r'"new_contract"\s*:\s*(\d+)', raw)
+    if not match:
+        match = re.search(r'new_contract\s*[:=]\s*(\d+)', raw)
+    if match:
+        instance_id = match.group(1)
+print(instance_id)
 PY
 )
 

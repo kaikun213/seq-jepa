@@ -1,6 +1,7 @@
 # Experiment Logs
 
 This directory tracks all experiments: what was tried, results, and decisions.
+Agents must log every experiment run here and add it to the index below.
 
 ## Structure
 
@@ -59,4 +60,4 @@ Each experiment should follow this structure:
 |------------|------|------|--------|-------------|
 | baseline-smoke | Step 1 | - | ✅ | Smoke test passes |
 | baseline-quick | Step 1 | - | 🔄 | In progress |
-
+| baseline-cifar100-vast | Step 1 | 2026-01-04 | ✅ | Clean Vast run completed; far below paper metrics |

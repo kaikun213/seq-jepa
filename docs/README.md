@@ -47,7 +47,7 @@ When starting work:
 1. Check `status-tracker.md` for current state
 2. Read relevant step plan (e.g., `plans/step-1-baseline-repro.md`)
 3. Update status tracker when starting/completing work
-4. Log experiments in `experiments/` directory
+4. Log every experiment run in `experiments/` and add it to `experiments/README.md`
 5. Document decisions in `decisions/` if significant
 
 See `AGENTS.md` for full agent guidelines.
