@@ -81,11 +81,13 @@ Mode B - Quick
 
 Mode C - Baseline-ish
 - larger subset or full CIFAR-100
+- 200-epoch local gate: `configs/local/cifar100_aug_baseline_gate.yaml`
 
 CLI pattern:
 ```bash
 python train.py --config configs/quick/cifar100_aug_smoke.yaml
 python train.py --config configs/quick/cifar100_aug_quick.yaml
+scripts/local/run_cifar100_aug_baseline_gate.sh
 python train.py --config configs/quick/cifar10_rot_smoke.yaml
 python train.py --config configs/quick/cifar10_rot_quick.yaml
 ```
@@ -93,6 +95,7 @@ python train.py --config configs/quick/cifar10_rot_quick.yaml
 ### 2.5 Local gates (must pass before remote runs)
 - Smoke: completes without crash, loss finite, `online_linacc_test` above random.
 - Quick: `online_linacc_test` and `online_r2_test` exceed thresholds in config.
+- CIFAR-100 gate: 200-epoch local run with the same metrics as remote gates.
 - Gate status is logged to W&B as `gate_pass` with `gate_reasons` in the run summary.
 - See `docs/reference/metrics-and-gates.md` for full metric definitions and gates.
 

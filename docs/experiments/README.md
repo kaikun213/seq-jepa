@@ -60,5 +60,11 @@ Each experiment should follow this structure:
 |------------|------|------|--------|-------------|
 | baseline-smoke | Step 1 | - | ✅ | Smoke test passes |
 | baseline-quick | Step 1 | - | 🔄 | In progress |
-| baseline-cifar100-vast | Step 1 | 2026-01-04 | ✅ | Clean Vast run completed; far below paper metrics |
+| baseline-cifar100-gate | Step 1 | 2026-01-04 | 🔄 | 200-epoch CIFAR-100 gate in progress |
 | baseline-cifar100-paper | Step 1 | 2026-01-04 | 🔄 | Paper-aligned run in progress |
+
+## Archive
+
+| Experiment | Step | Date | Status | Key Finding |
+|------------|------|------|--------|-------------|
+| baseline-cifar100-vast-10ep | Step 1 | 2026-01-04 | ✅ | 10-epoch shakedown; far below paper metrics |

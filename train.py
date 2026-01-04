@@ -6,6 +6,7 @@ import os
 import random
 import sys
 import time
+from datetime import datetime
 from pathlib import Path
 
 import yaml
@@ -707,8 +708,10 @@ def main():
         })
         result_row["wall_time"] = time.time() - start_time
         metrics.append(result_row)
+        timestamp = datetime.now().strftime("%H:%M:%S")
         print(
-            "Epoch {}/{} - loss {:.4f} linacc_test {:.2f} r2_test {:.4f}".format(
+            "[{}] Epoch {}/{} - loss {:.4f} linacc_test {:.2f} r2_test {:.4f}".format(
+                timestamp,
                 epoch + 1,
                 epochs,
                 result_row["ep_loss"],

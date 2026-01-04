@@ -9,7 +9,7 @@
 - Step 1 baseline uses CIFAR-100 augmentation actions; CIFAR-10 rotations stay as a quick fallback.
 
 ## Recommended configs
-- Baseline (CIFAR-100 aug): `configs/remote/cifar100_aug_baseline.yaml`
+- Baseline gate (CIFAR-100 aug, mid): `configs/remote/cifar100_aug_baseline.yaml`
 - Paper-aligned (CIFAR-100 aug, long): `configs/remote/cifar100_aug_paper.yaml`
 - Shakedown (CIFAR-100 aug): `configs/quick/cifar100_aug_smoke.yaml` or `configs/quick/cifar100_aug_quick.yaml`
 - Optional fast fallback: `configs/quick/cifar10_rot_smoke.yaml` or `configs/quick/cifar10_rot_quick.yaml`
@@ -29,7 +29,7 @@
 - Run:
   - `git clone` the repo
   - `pip install -r requirements.txt` (or remove `deepgaze-pytorch` and `Pillow_SIMD` if they fail)
-  - `scripts/vast/run_cifar100_aug_baseline.sh`
+  - `scripts/vast/run_cifar100_aug_baseline.sh` (gate config)
 - Optional: run the CIFAR-100 smoke/quick config first to validate the environment.
 
 ### Automated CLI run (recommended)
@@ -59,7 +59,7 @@ Notes:
 
 ## Rough runtimes (very approximate)
 - Mac M3 Max: quick config ~8 min (based on recent 5-10 min runs).
-- Vast.ai 1x RTX 3060: quick ~1-2 min, baseline ~4-6 min.
+- Vast.ai 1x RTX 3060: quick ~1-2 min, 10-epoch baseline ~5-10 min, gate baseline ~1-3 hours.
 - First run adds data download time (~1-3 min) if not cached.
 
 ## If you hit issues

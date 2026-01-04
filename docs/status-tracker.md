@@ -37,6 +37,9 @@ Last updated: 2026-01-04
 - Set up local git config for private email
 - Ran clean Vast CIFAR-100 baseline; results far below paper targets
 - Started paper-aligned CIFAR-100 run on Vast (long, eval pending)
+- Updated CIFAR-100 gate config and metrics/gates guidance for remote comparisons
+- Archived deprecated 10-epoch CIFAR-100 baseline artifacts and added local gate script/config
+- Started local 200-epoch CIFAR-100 gate run (MPS)
 
 ### 2026-01-03
 - Smoke and quick runs passing on CIFAR-10 rotations

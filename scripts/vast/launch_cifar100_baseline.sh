@@ -86,7 +86,25 @@ CREATE_JSON=$(vastai create instance "$OFFER_ID" \
   --api-key "$VAST_API_KEY" \
   --raw)
 
-INSTANCE_ID=$(echo "$CREATE_JSON" | python -c 'import json,sys,re; raw=sys.stdin.read(); instance_id="";\ntry:\n    data=json.loads(raw.strip()); instance_id=str(data.get("new_contract","") or "")\nexcept Exception:\n    match=re.search(r"\"new_contract\"\\s*:\\s*(\\d+)", raw) or re.search(r"new_contract\\s*[:=]\\s*(\\d+)", raw)\n    if match:\n        instance_id=match.group(1)\nprint(instance_id)')
+INSTANCE_ID=$(CREATE_JSON="$CREATE_JSON" python - <<'PY'
+import json
+import re
+import os
+
+raw = os.environ.get("CREATE_JSON", "")
+instance_id = ""
+try:
+    data = json.loads(raw.strip())
+    instance_id = str(data.get("new_contract", "") or "")
+except Exception:
+    match = re.search(r"\"new_contract\"\s*:\s*(\d+)", raw) or re.search(
+        r"new_contract\s*[:=]\s*(\d+)", raw
+    )
+    if match:
+        instance_id = match.group(1)
+print(instance_id)
+PY
+)
 
 if [[ -z "$INSTANCE_ID" ]]; then
   echo "Failed to create instance. Raw response:"
@@ -104,7 +122,24 @@ FAIL_PATH="${VAST_FAIL_PATH:-/workspace/seq-jepa-streaming/runs/vast_cifar100_ba
 if [[ "$AUTO_DESTROY" != "0" ]]; then
   echo "Waiting for run completion before destroying instance."
   while true; do
-    SSH_INFO=$(vastai show instance "$INSTANCE_ID" --raw --api-key "$VAST_API_KEY" | python -c 'import json,sys; raw=sys.stdin.read().strip();\ntry:\n    data=json.loads(raw)\nexcept json.JSONDecodeError:\n    print(""); sys.exit(0)\nhost=data.get("ssh_host") or ""; port=data.get("ssh_port") or "";\nprint(f"{host} {port}" if host and port else "")'))
+    SSH_JSON=$(vastai show instance "$INSTANCE_ID" --raw --api-key "$VAST_API_KEY")
+    SSH_INFO=$(SSH_JSON="$SSH_JSON" python - <<'PY'
+import json
+import os
+import sys
+
+raw = os.environ.get("SSH_JSON", "").strip()
+try:
+    data = json.loads(raw)
+except json.JSONDecodeError:
+    print("")
+    sys.exit(0)
+
+host = data.get("ssh_host") or ""
+port = data.get("ssh_port") or ""
+print(f"{host} {port}" if host and port else "")
+PY
+)
     SSH_HOST="${SSH_INFO%% *}"
     SSH_PORT="${SSH_INFO##* }"
 

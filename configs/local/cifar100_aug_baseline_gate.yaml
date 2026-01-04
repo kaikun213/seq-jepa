@@ -1,10 +1,10 @@
 run:
-  name: cifar100-aug-baseline-gate
+  name: cifar100-aug-baseline-gate-local
   seed: 42
   device: auto
   mps_fallback: true
   epochs: 200
-  output_dir: runs/remote/cifar100-aug-baseline-gate
+  output_dir: runs/local/cifar100-aug-baseline-gate
   drop_last: true
   save_checkpoint: true
 
@@ -21,7 +21,7 @@ dataset:
   subset_val: 10000
   subset_seed: 42
   batch_size: 128
-  num_workers: 8
+  num_workers: 0
 
 model:
   img_size: 32
@@ -51,13 +51,13 @@ eval:
   probe_epochs: 50
   probe_lr: 0.1
   batch_size: 128
-  num_workers: 8
+  num_workers: 0
 
 logging:
   wandb:
     enabled: true
     project: seq-jepa-streaming
-    group: remote-gate
+    group: local-gate
     mode: online
 
 gating:

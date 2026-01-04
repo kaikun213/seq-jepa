@@ -1,12 +1,11 @@
 run:
-  name: cifar100-aug-baseline-gate
+  name: cifar100-aug-baseline-remote
   seed: 42
   device: auto
   mps_fallback: true
-  epochs: 200
-  output_dir: runs/remote/cifar100-aug-baseline-gate
+  epochs: 10
+  output_dir: runs/remote/cifar100-aug-baseline
   drop_last: true
-  save_checkpoint: true
 
 dataset:
   name: cifar100_aug
@@ -21,7 +20,7 @@ dataset:
   subset_val: 10000
   subset_seed: 42
   batch_size: 128
-  num_workers: 8
+  num_workers: 4
 
 model:
   img_size: 32
@@ -38,30 +37,23 @@ model:
   cifar_resnet: true
 
 optim:
-  name: adamw
-  lr: 0.0004
-  min_lr: 0.00001
-  warmup_epochs: 10
-  weight_decay: 0.001
-  scheduler: cosine
+  lr: 0.001
+  weight_decay: 0.0
   probe_lr: 0.001
 
 eval:
-  seq_len: 5
-  probe_epochs: 50
-  probe_lr: 0.1
-  batch_size: 128
-  num_workers: 8
+  latent_type: aug
+  eval_type: aug
 
 logging:
   wandb:
     enabled: true
     project: seq-jepa-streaming
-    group: remote-gate
+    group: remote-baseline
     mode: online
 
 gating:
   linacc_test_min: 5.0
-  r2_test_min: 0.1
+  r2_test_min: 0.05
   leakage_linacc_gap_min: 0.0
   leakage_r2_gap_min: 0.0

@@ -1,55 +1,36 @@
-# Experiment: Step 1 CIFAR-100 Baseline (Vast, Clean Run)
+# Experiment: Step 1 CIFAR-100 Baseline Gate
 
 **Date**: 2026-01-04  
 **Step**: Step 1 - Baseline Reproduction  
-**Status**: ✅ Completed (results below paper)
+**Status**: 🔄 In Progress
 
 ## Objective
-Run a clean, from-scratch CIFAR-100 augmentation baseline on Vast.ai to validate the remote pipeline and compare against seq-JEPA paper results.
+Establish a mid-cost CIFAR-100 gate (200 epochs) that is closer to the paper settings than smoke/quick, so model changes (e.g., teacherless) have a stable invariance/equivariance baseline.
 
 ## Setup
-- Config: `configs/remote/cifar100_aug_baseline.yaml`
+- Config (remote gate): `configs/remote/cifar100_aug_baseline.yaml`
+- Config (local gate): `configs/local/cifar100_aug_baseline_gate.yaml`
+- Script (local): `scripts/local/run_cifar100_aug_baseline_gate.sh`
+- Script (remote): `scripts/vast/run_cifar100_aug_baseline.sh`
 - Dataset: CIFAR-100 augmentation actions (crop + jitter + blur), `seq_len=3`
-- Training:
-  - epochs: 10
-  - batch_size: 128
-  - optimizer: Adam (per wrapper defaults)
-  - action_norm: true
-- Hardware: Vast.ai 1x RTX 3060 (12GB)
-- Output: `runs/remote/cifar100-aug-baseline/metrics.jsonl`
+- Training: 200 epochs, batch_size=128, AdamW + cosine, warmup 10
+- Output (local): `runs/local/cifar100-aug-baseline-gate/`
+- Output (remote): `runs/remote/cifar100-aug-baseline-gate/`
+
+Note: The earlier 10-epoch shakedown was archived at
+`docs/experiments/archive/step-1-baseline-cifar100-vast-10ep.md` and
+`configs/archive/remote/cifar100_aug_baseline_10ep.yaml`.
 
 ## Results
-From epoch 10 (test metrics):
-- `online_linacc_test`: 2.21
-- `online_r2_test`: 0.1054
-- `ep_loss`: 0.1719
-- `leakage_linacc_test`: 2.81
-- `leakage_r2_test`: -0.0427
-
-Note: Metrics are from the online probe trained jointly during training (not a frozen-feature probe).
-
-## Comparison to Paper (seq-JEPA)
-Paper reference (Table 2, CIFAR-100, Crop+Jitter+Blur, seq-JEPA M_tr=3):
-- Top-1 classification: 58.33
-- Crop R2: 0.79
-- Jitter R2: 0.63
-- Blur R2: 0.92
-
-Our run is far below paper results. This is expected because the setup is not comparable:
-- Training is 10 epochs vs. 2000 epochs in the paper.
-- Batch size is 128 vs. 512.
-- RTX 3060 vs. A100 40GB.
-- Our evaluation uses an online probe trained jointly; paper uses frozen representations + linear probe.
-- Our equivariance score is a single regression over combined augmentation parameters, not per-augmentation R2.
+- Local gate run started on MPS; metrics pending.
+- W&B group: `local-gate`.
 
 ## Analysis
-- Pipeline is validated end-to-end on Vast (clone, install, run, W&B sync, output files).
-- Representation quality is still near-random for classification, which is consistent with short training.
-- Equivariance R2 is low but non-zero, again expected under the reduced training regime.
+- Gate uses online probes during training for fast regression detection.
+- Frozen probe evaluation is optional and used for paper-level comparisons.
 
 ## Decisions
-- Treat this as a pipeline validation run, not a paper-level reproduction.
-- Next follow-up should align with paper protocol: longer training, larger batch size, frozen probe evaluation, and per-augmentation R2.
+- Use this gate as the baseline for Step 2 model changes once results are recorded.
 
 ## Files Changed
 - None (run-only)
