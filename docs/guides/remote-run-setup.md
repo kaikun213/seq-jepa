@@ -31,6 +31,19 @@
   - `scripts/vast/run_cifar100_aug_baseline.sh`
 - Optional: run the CIFAR-100 smoke/quick config first to validate the environment.
 
+### Automated CLI run (recommended)
+Use the launcher script to search offers and create an instance with the onstart script:
+
+```bash
+export GITHUB_SSH_KEY_PATH=~/.ssh/private_github
+scripts/vast/launch_cifar100_baseline.sh
+```
+
+Notes:
+- The script prefers SSH. If you instead want HTTPS, set `GITHUB_TOKEN` and unset `GITHUB_SSH_KEY_PATH`.
+- Default GPU list is `RTX_3060`, `A10`, `RTX_3070`, `RTX_3080`, `RTX_3090`. Override with `VAST_GPU_LIST`.
+- The onstart script clones the repo, installs requirements, and runs the baseline config.
+
 ## SLURM
 - Template: `scripts/slurm/seqjepa_cifar10_rot_baseline.sbatch` (update to CIFAR-100 when needed)
 - Fill in partition/account, module loads, and env activation.

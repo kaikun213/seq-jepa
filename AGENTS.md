@@ -18,4 +18,4 @@
 - **Experiment logs**: Document experiments in `docs/experiments/` following the template
 - **Decisions**: Log significant decisions in `docs/decisions/` with rationale
 - **Index**: Keep `docs/README.md` updated when adding or renaming notes
-- See `docs/099-doc-structure-guide.md` for full documentation best practices
+- See `docs/doc-structure-guide.md` for full documentation best practices

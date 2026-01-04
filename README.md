@@ -16,10 +16,10 @@ This repo hosts the upstream seq-JEPA code alongside research notes and additive
 - Document changes in `docs` and keep `docs/README.md` up to date.
 
 ## Quick start (local)
-- Create a venv and install requirements (see `docs/020-practical-setup.md`).
+- Create a venv and install requirements (see `docs/guides/practical-setup.md`).
 - If macOS cannot install `requirements.txt`, use `requirements-local.txt`.
 - Copy `.env.example` to `.env` and set `WANDB_API_KEY` if you want logging.
-- See `docs/021-metrics-and-gates.md` for metric definitions and gate thresholds.
+- See `docs/reference/metrics-and-gates.md` for metric definitions and gate thresholds.
 - Use the wrapper runner and configs:
   - `python train.py --config configs/quick/cifar100_aug_smoke.yaml`
   - `python train.py --config configs/quick/cifar100_aug_quick.yaml`

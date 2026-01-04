@@ -225,8 +225,8 @@ return loss, agg_out, z1, z2
 
 ## References
 
-- Step 2 plan: `docs/012-step-2-teacherless-rate.md`
-- Baseline architecture: `docs/003-architecture-baseline.md`
+- Step 2 plan: `docs/plans/step-2-teacherless-rate.md`
+- Baseline architecture: `docs/plans/architecture-baseline.md`
 - MCR² paper: Learning Diverse and Discriminative Representations via the Principle of Maximum Code Rate Reduction (2020)
 - DINO simplification: Simplifying DINO via Coding Rate Regularization (2025)
 
