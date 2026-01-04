@@ -39,9 +39,10 @@ source .venv/bin/activate
 pip install -U pip wheel
 REQS_FILE="requirements.txt"
 REQS_TMP="/tmp/requirements-remote.txt"
+FILTER_PATTERN='^(deepgaze-pytorch|Pillow_SIMD)=='
 
-if grep -q '^deepgaze-pytorch==' "$REQS_FILE"; then
-  grep -v '^deepgaze-pytorch==' "$REQS_FILE" > "$REQS_TMP"
+if grep -Eq "$FILTER_PATTERN" "$REQS_FILE"; then
+  grep -Ev "$FILTER_PATTERN" "$REQS_FILE" > "$REQS_TMP"
   pip install -r "$REQS_TMP"
 else
   pip install -r "$REQS_FILE"
