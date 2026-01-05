@@ -4,8 +4,8 @@ Last updated: 2026-01-05
 
 ## Current Focus
 
-**Active Step**: Step 2 - Teacherless Rate (Exp A-D complete, ready for remote)  
-**Next Step**: CRATE integration (Exp E), then remote baselines on CIFAR-100
+**Active Step**: Step 2 - Remote baselines launching  
+**Next Step**: Validate remote results, then step-3 CRATE integration
 
 ## Milestone Status
 
@@ -58,7 +58,12 @@ Last updated: 2026-01-05
 - **Subspace metrics integrated**: rank_eq_eff, rank_inv_eff, subspace_ev, etc. logged to W&B
 - **MNIST Subspace (v2)**: r2 0.47 (strong equivariance learning)
   - W&B: [qganshbm](https://wandb.ai/kaikun213/seq-jepa-streaming/runs/qganshbm)
-- **Remaining**: CRATE components (Exp E), remote baselines
+- **Remote launch prepared**: 
+  - `configs/remote/step2_exp_a_ema_rate.yaml` (30 epochs, EMA+Rate)
+  - `configs/remote/step2_exp_b_teacherless.yaml` (30 epochs, Teacherless)
+  - Launch: `scripts/vast/launch_step2.sh`
+- **Decision**: Skip Exp C-E (sharpening, symmetric, CRATE) - teacherless works, keep simple
+- **Remaining**: Run remote, compare EMA vs Teacherless, then step-3 CRATE
 
 ### 2026-01-04
 - Reorganized documentation structure into subdirectories
