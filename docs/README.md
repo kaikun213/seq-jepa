@@ -11,6 +11,7 @@ See `README.md` and `AGENTS.md` for repo policy.
 - **🛠️ [Guides](guides/)**: Setup and practical guides
 - **🧪 [Experiments](experiments/)**: Experiment logs and results
 - **💡 [Decisions](decisions/)**: Decision log with rationale
+- **📋 [Templates](templates/)**: Templates for experiments and status tracking
 
 ## Documentation Structure
 
@@ -40,6 +41,10 @@ See `README.md` and `AGENTS.md` for repo policy.
 ### Guides (`guides/`)
 - **practical-setup.md**: Local/remote setup and fast iteration suite
 - **remote-run-setup.md**: Vast.ai + SLURM setup templates and runtime estimates
+
+### Templates (`templates/`)
+- **experiment-template.md**: Copy for new experiments (includes required Preliminary Analysis section)
+- **status-tracker-template.md**: Reference for status tracker structure (includes remote job tracking)
 
 ## For Agents
 

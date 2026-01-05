@@ -49,6 +49,9 @@ docs/
 ├── guides/          # Setup and practical guides
 │   ├── practical-setup.md
 │   └── remote-run-setup.md
+├── templates/        # Templates for documentation
+│   ├── experiment-template.md   # Copy for new experiments
+│   └── status-tracker-template.md  # Reference for status structure
 ├── status-tracker.md  # Current state (START HERE)
 ├── experiments/      # Experiment logs (what was tried)
 │   ├── README.md
@@ -92,14 +95,22 @@ Use these consistently across all docs:
 ### During Work
 
 4. **Create experiment log** (if doing experiments):
-   - Create file in `experiments/` directory
-   - Follow template from `experiments/README.md`
+   - Copy `templates/experiment-template.md` to `experiments/step-N-name.md`
+   - Fill in all sections, especially **Preliminary Analysis**
    - Link to W&B runs and configs
 
 5. **Document decisions** (if significant):
    - Add to `decisions/` directory
    - Explain rationale and alternatives
    - Note impact
+
+### Launching Remote Jobs
+
+5. **Track remote instances** (critical for cost control):
+   - Add to "Active Remote Jobs" table in status tracker
+   - Include: Instance ID, label, GPU, W&B link, estimated cost
+   - After completion: **destroy instance** and remove from table
+   - Never leave instances running untracked
 
 ### Completing Work
 
@@ -108,10 +119,12 @@ Use these consistently across all docs:
    - Move to "Recently Completed"
    - Update progress percentages
    - Note completion date
+   - **Destroy any remote instances** used for this work
 
 7. **Update experiment log**:
    - Mark status as complete
    - Add final results and analysis
+   - **Fill in Preliminary Analysis** (required)
    - Note any follow-ups needed
 
 ## File Naming Conventions

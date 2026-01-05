@@ -25,7 +25,7 @@
 - If using the Vast.ai CLI, set `VAST_API_KEY`.
 
 ## Vast.ai
-- Suggested instance: 1x GPU (RTX 3060 12GB or A10 24GB), 8 vCPU, 30-60GB disk.
+- Suggested instance: 1x GPU (RTX 4090 24GB preferred, RTX 3090 24GB backup), 8 vCPU, 40-60GB disk.
 - Run:
   - `git clone` the repo
   - `pip install -r requirements.txt` (or remove `deepgaze-pytorch` and `Pillow_SIMD` if they fail)
@@ -48,7 +48,7 @@ scripts/vast/launch_cifar100_paper.sh
 
 Notes:
 - The script prefers SSH. If you instead want HTTPS, set `GITHUB_TOKEN` and unset `GITHUB_SSH_KEY_PATH`.
-- Default GPU list is `RTX_3060`, `A10`, `RTX_3070`, `RTX_3080`, `RTX_3090`. Override with `VAST_GPU_LIST`.
+- Default GPU list is `RTX_4090`, `RTX_3090`, `A10`, `RTX_3080`. Override with `VAST_GPU_LIST`.
 - The onstart script clones the repo, installs requirements (filtering `deepgaze-pytorch` and `Pillow_SIMD`), and runs the baseline config.
 - The launcher waits for a completion marker and then destroys the instance. Set `VAST_AUTO_DESTROY=0` to keep it running.
 
@@ -59,7 +59,9 @@ Notes:
 
 ## Rough runtimes (very approximate)
 - Mac M3 Max: quick config ~8 min (based on recent 5-10 min runs).
-- Vast.ai 1x RTX 3060: quick ~1-2 min, 10-epoch baseline ~5-10 min, gate baseline ~1-3 hours.
+- Vast.ai 1x RTX 4090: quick ~30s, 30-epoch step2 ~30-60 min, 200-epoch baseline ~2-4 hours.
+- Vast.ai 1x RTX 3090: quick ~1 min, 30-epoch step2 ~1-2 hours, 200-epoch baseline ~4-6 hours.
+- Vast.ai 1x RTX 3060: quick ~2 min, 30-epoch step2 ~3-4 hours.
 - First run adds data download time (~1-3 min) if not cached.
 
 ## If you hit issues

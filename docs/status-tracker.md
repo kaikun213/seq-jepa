@@ -4,15 +4,21 @@ Last updated: 2026-01-05
 
 ## Current Focus
 
-**Active Step**: Step 2 - Remote baselines launching  
-**Next Step**: Validate remote results, then step-3 CRATE integration
+**Active Step**: Step 2 - Remote experiments running  
+**Next Step**: Compare EMA vs Teacherless results, then step-3 CRATE integration
+
+## Active Remote Jobs
+
+| Instance ID | Label | GPU | Status | W&B Run | Notes |
+|-------------|-------|-----|--------|---------|-------|
+| 29522248 | seqjepa-step2 | RTX 3060 | 🟢 Running | TBD | Step 2 experiments |
 
 ## Milestone Status
 
 | Milestone | Status | Progress | Notes |
 |-----------|--------|----------|-------|
-| M1 (Baseline) | 🟡 In Progress | 95% | Paper-aligned CIFAR-100 run in progress |
-| M2 (Teacherless) | 🟡 In Progress | 85% | Exp A-D ✓, subspace integrated, CRATE pending |
+| M1 (Baseline) | ✅ Complete | 100% | Paper run: 57.84% linacc, 0.739 R² |
+| M2 (Teacherless) | 🟡 In Progress | 85% | Exp A-D ✓, subspace integrated, remote running |
 | M3 (CRATE) | ⚪ Not Started | 0% | |
 | M4 (ToST) | ⚪ Not Started | 0% | |
 | M5 (Streaming) | ⚪ Not Started | 0% | |
@@ -23,8 +29,8 @@ Last updated: 2026-01-05
 | Step | Status | Blocking Issues |
 |------|--------|-----------------|
 | Step 0 - Repo Setup | ✅ Complete | — |
-| Step 1 - Baseline Repro | 🟡 In Progress | Paper-aligned run in progress; eval pending |
-| Step 2 - Teacherless Rate | 🟡 In Progress | Exp A-D ✓, subspace ✓, CRATE pending |
+| Step 1 - Baseline Repro | ✅ Complete | Paper run finished: [eg1gydas](https://wandb.ai/kaikun213/seq-jepa-streaming/runs/eg1gydas) |
+| Step 2 - Teacherless Rate | 🟡 In Progress | Remote experiments running (instance 29522248) |
 | Step 3 - CRATE Integration | ⚪ Pending | |
 | Step 4 - ToST Streaming | ⚪ Pending | |
 | Step 5 - Streaming Continual | ⚪ Pending | |
@@ -33,6 +39,11 @@ Last updated: 2026-01-05
 ## Recent Work
 
 ### 2026-01-05
+- **Step 1 paper baseline COMPLETE** ✅:
+  - W&B: [eg1gydas](https://wandb.ai/kaikun213/seq-jepa-streaming/runs/eg1gydas)
+  - **linacc: 57.84%**, **R²: 0.739** (2000 epochs, 23.4 hours)
+  - Leakage gaps positive (inv/eq separation confirmed)
+  - Destroyed idle instance 29493608 (was still running after completion)
 - **Step 2 experiments completed (local)**:
   - Fixed SSL/Zscaler with `truststore` package in train.py
   - **Exp A (EMA+Rate)**: Smoke ✓, Quick ✓, Baseline-lite ✓
@@ -87,7 +98,7 @@ Last updated: 2026-01-05
 
 ## Active Blockers
 
-- Baseline performance far below paper; need longer training and paper-aligned probe evaluation
+- None currently (Step 1 complete, Step 2 remote running)
 
 ## Notes for Agents
 

@@ -3,68 +3,44 @@
 This directory tracks all experiments: what was tried, results, and decisions.
 Agents must log every experiment run here and add it to the index below.
 
+## Creating New Experiments
+
+1. Copy the template: `docs/templates/experiment-template.md`
+2. Rename to `step-N-experiment-name.md`
+3. Fill in all sections, especially **Preliminary Analysis** (required)
+4. Add to the index below
+
 ## Structure
 
-- `experiments/` - Individual experiment logs
-  - `step-1-baseline-*.md` - Baseline reproduction experiments
-  - `step-2-teacherless-*.md` - Teacherless and coding rate experiments
-  - `step-3-crate-*.md` - CRATE integration experiments
-  - etc.
-
-## Experiment Log Template
-
-Each experiment should follow this structure:
-
-```markdown
-# Experiment: [Short Name]
-
-**Date**: YYYY-MM-DD
-**Step**: [Step number/name]
-**Status**: ✅ Success | ❌ Failed | 🔄 In Progress | ⏸️ Paused
-
-## Objective
-[What we're trying to achieve]
-
-## Setup
-- Config: `configs/path/to/config.yaml`
-- Model variant: [e.g., SeqJEPA_Transforms with EMA]
-- Dataset: [e.g., CIFAR-10 rotations]
-- Hyperparameters:
-  - lr: 0.001
-  - lambda_rate: 0.01
-  - etc.
-
-## Results
-- Metrics: [Key numbers]
-- W&B run: [link or run ID]
-- Observations: [What happened]
-
-## Analysis
-- What worked: [Success factors]
-- What didn't: [Failure modes]
-- Surprises: [Unexpected findings]
-
-## Decisions
-- [Decision made based on this experiment]
-- [Next steps or follow-ups]
-
-## Files Changed
-- `experiments/models_seqjepa.py`: [what changed]
-- `train.py`: [what changed]
-- etc.
-```
+- `step-1-baseline-*.md` - Baseline reproduction experiments
+- `step-2-*.md` - Teacherless and coding rate experiments
+- `step-3-crate-*.md` - CRATE integration experiments
+- `archive/` - Superseded experiments
 
 ## Index
 
-| Experiment | Step | Date | Status | Key Finding |
-|------------|------|------|--------|-------------|
-| baseline-smoke | Step 1 | - | ✅ | Smoke test passes |
-| baseline-quick | Step 1 | - | 🔄 | In progress |
-| baseline-cifar100-gate | Step 1 | 2026-01-04 | 🔄 | 30-epoch local CIFAR-100 gate in progress |
-| baseline-cifar100-paper | Step 1 | 2026-01-04 | 🔄 | Paper-aligned run in progress |
+### Step 1: Baseline Reproduction
+
+| Experiment | Date | Status | Key Finding |
+|------------|------|--------|-------------|
+| [baseline-smoke](step-1-baseline-smoke.md) | 2026-01-03 | ✅ | Smoke test passes |
+| [baseline-cifar100-paper](step-1-baseline-cifar100-paper.md) | 2026-01-05 | ✅ | **57.84% linacc, 0.739 R²** - Paper-level |
+
+### Step 2: Teacherless + Rate
+
+| Experiment | Date | Status | Key Finding |
+|------------|------|--------|-------------|
+| [exp-a-ema-rate](step-2-exp-a-ema-rate.md) | 2026-01-05 | ✅ | EMA+Rate works: 34.1% linacc, 0.30 R² |
+| [exp-b-stopgrad](step-2-exp-b-stopgrad.md) | 2026-01-05 | ✅ | Needs warmup+cosine: 30.0% linacc |
+| [exp-c-symmetric](step-2-exp-c-symmetric.md) | 2026-01-05 | ✅ | No clear benefit vs baseline |
+| [exp-d-sharpening](step-2-exp-d-sharpening.md) | 2026-01-05 | ❌ | Sharpening hurts with cosine loss |
+| [mnist-subspace](step-2-mnist-subspace.md) | 2026-01-05 | ✅ | Subspace diagnostics validated |
+| [remote-baselines](step-2-remote-baselines.md) | 2026-01-05 | 🔄 | Remote comparison running |
 
 ## Archive
 
-| Experiment | Step | Date | Status | Key Finding |
-|------------|------|------|--------|-------------|
-| baseline-cifar100-vast-10ep | Step 1 | 2026-01-04 | ✅ | 10-epoch shakedown; far below paper metrics |
+Superseded experiments moved to `archive/` with notes on what replaced them.
+
+| Experiment | Date | Reason Archived |
+|------------|------|-----------------|
+| [baseline-cifar100-vast-10ep](archive/step-1-baseline-cifar100-vast-10ep.md) | 2026-01-04 | Replaced by 2000-epoch paper run |

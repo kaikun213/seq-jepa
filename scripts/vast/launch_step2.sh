@@ -14,8 +14,8 @@ fi
 : "${VAST_API_KEY:?Set VAST_API_KEY in .env or env}"
 : "${WANDB_API_KEY:?Set WANDB_API_KEY in .env or env}"
 
-# Use faster GPU for 30-epoch runs (should take ~1-2 hours)
-GPU_LIST_DEFAULT='["RTX_3090","RTX_4090","A10","RTX_3080","RTX_3070","RTX_3060"]'
+# Use faster GPU for 30-epoch runs (~30-60 min on RTX 4090)
+GPU_LIST_DEFAULT='["RTX_4090","RTX_3090","A10","RTX_3080"]'
 GPU_LIST="${VAST_GPU_LIST:-$GPU_LIST_DEFAULT}"
 QUERY_DEFAULT="reliability>0.98 num_gpus==1 gpu_name in ${GPU_LIST} gpu_ram>=12 disk_space>=40 inet_down>=50 rented=any"
 QUERY="${VAST_QUERY:-$QUERY_DEFAULT}"
