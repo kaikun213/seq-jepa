@@ -5,30 +5,11 @@ set -euo pipefail
 
 WORKDIR="${WORKDIR:-/workspace}"
 REPO_DIR="${REPO_DIR:-seq-jepa-streaming}"
-REPO_URL_SSH="git@github-private:kaikun213/seq-jepa-streaming.git"
+# Use public HTTPS URL (repo is public) for reliable cloning
+REPO_URL="https://github.com/kaikun213/seq-jepa.git"
 
 mkdir -p "$WORKDIR"
 cd "$WORKDIR"
-
-# Setup GitHub SSH key if provided
-if [[ -n "${GITHUB_SSH_KEY_B64:-}" ]]; then
-  mkdir -p ~/.ssh
-  echo "$GITHUB_SSH_KEY_B64" | base64 -d > ~/.ssh/id_ed25519
-  chmod 600 ~/.ssh/id_ed25519
-  ssh-keyscan github.com >> ~/.ssh/known_hosts
-  cat > ~/.ssh/config <<'CFG'
-Host github-private
-  Hostname github.com
-  IdentityFile ~/.ssh/id_ed25519
-  IdentitiesOnly yes
-CFG
-  REPO_URL="$REPO_URL_SSH"
-elif [[ -n "${GITHUB_TOKEN:-}" ]]; then
-  REPO_URL="https://${GITHUB_TOKEN}@github.com/kaikun213/seq-jepa-streaming.git"
-else
-  echo "Missing GitHub credentials. Set GITHUB_SSH_KEY_B64 or GITHUB_TOKEN." >&2
-  exit 1
-fi
 
 # Export W&B and Vast credentials to environment
 {
@@ -53,12 +34,24 @@ fi
 # Source for current shell
 source /etc/environment 2>/dev/null || true
 
-# Clone repo if not present
+# Clone repo if not present, or pull latest
 if [[ ! -d "$REPO_DIR" ]]; then
   git clone "$REPO_URL" "$REPO_DIR"
+else
+  cd "$REPO_DIR"
+  git fetch origin main
+  git reset --hard origin/main
+  cd "$WORKDIR"
 fi
 
 cd "$REPO_DIR"
+
+# Verify we have the latest code with the run scripts
+if [[ ! -f "scripts/vast/run_exp_a.sh" ]]; then
+  echo "ERROR: run_exp_a.sh not found. Trying to pull latest..."
+  git fetch origin main --depth=1
+  git reset --hard origin/main
+fi
 
 # Setup Python environment
 python -m venv .venv
@@ -80,4 +73,5 @@ fi
 pip install vastai --quiet
 
 # Run Exp A
+chmod +x scripts/vast/run_exp_a.sh
 scripts/vast/run_exp_a.sh
