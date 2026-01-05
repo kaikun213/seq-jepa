@@ -9,6 +9,13 @@ import time
 from datetime import datetime
 from pathlib import Path
 
+# Fix SSL for corporate proxies (Zscaler) - must be before any network imports
+try:
+    import truststore
+    truststore.inject_into_ssl()
+except ImportError:
+    pass  # truststore not installed, use default SSL
+
 import yaml
 
 
@@ -499,6 +506,7 @@ def main():
     from models import SeqJEPA_Transforms
     from experiments.datasets_rot import CIFAR10RotationSequence
     from experiments.datasets_cifar100_aug import CIFAR100AugSequence
+    from experiments.models_teacherless import SeqJEPA_Teacherless, create_teacherless_model
 
     seed = int(run_cfg.get("seed", 42))
     seed_everything(seed)
@@ -608,21 +616,46 @@ def main():
                 "model.act_latentdim must match CIFAR100 augmentation parameter count."
             )
 
-    model = SeqJEPA_Transforms(
-        model_cfg.get("img_size", 32),
-        bool(model_cfg.get("ema", False)),
-        n_channels=int(model_cfg.get("n_channels", 3)),
-        num_classes=num_classes,
-        num_heads=int(model_cfg.get("num_heads", 4)),
-        num_enc_layers=int(model_cfg.get("num_enc_layers", 3)),
-        act_cond=int(model_cfg.get("act_cond", 1)),
-        pred_hidden=int(model_cfg.get("pred_hidden", 1024)),
-        act_projdim=int(model_cfg.get("act_projdim", 128)),
-        act_latentdim=act_latentdim,
-        learn_act_emb=int(model_cfg.get("learn_act_emb", 1)),
-        ema_decay=float(model_cfg.get("ema_decay", 0.996)),
-        cifar_resnet=bool(model_cfg.get("cifar_resnet", True)),
-    ).to(device)
+    # Check if teacherless features are requested
+    loss_cfg = cfg.get("loss", {})
+    use_teacherless_model = (
+        loss_cfg.get("rate_loss_enabled", False)
+        or model_cfg.get("teacherless", False)
+        or model_cfg.get("sharpening_enabled", False)
+        or model_cfg.get("symmetric", False)
+    )
+
+    if use_teacherless_model:
+        # Use extended model with teacherless/rate-loss features
+        # Inject num_classes and act_latentdim into config for factory
+        cfg_with_classes = {
+            **cfg,
+            "model": {
+                **model_cfg,
+                "num_classes": num_classes,
+                "act_latentdim": act_latentdim,
+            },
+        }
+        model = create_teacherless_model(cfg_with_classes, device)
+        print(f"Using SeqJEPA_Teacherless (rate_loss={loss_cfg.get('rate_loss_enabled', False)}, "
+              f"teacherless={model_cfg.get('teacherless', False)})")
+    else:
+        # Use upstream baseline model
+        model = SeqJEPA_Transforms(
+            model_cfg.get("img_size", 32),
+            bool(model_cfg.get("ema", False)),
+            n_channels=int(model_cfg.get("n_channels", 3)),
+            num_classes=num_classes,
+            num_heads=int(model_cfg.get("num_heads", 4)),
+            num_enc_layers=int(model_cfg.get("num_enc_layers", 3)),
+            act_cond=int(model_cfg.get("act_cond", 1)),
+            pred_hidden=int(model_cfg.get("pred_hidden", 1024)),
+            act_projdim=int(model_cfg.get("act_projdim", 128)),
+            act_latentdim=act_latentdim,
+            learn_act_emb=int(model_cfg.get("learn_act_emb", 1)),
+            ema_decay=float(model_cfg.get("ema_decay", 0.996)),
+            cifar_resnet=bool(model_cfg.get("cifar_resnet", True)),
+        ).to(device)
 
     external_linprobe = torch.nn.Sequential(
         torch.nn.Linear(model.emb_dim, num_classes)

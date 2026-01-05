@@ -1,0 +1,76 @@
+# Experiment A: EMA + Coding-Rate Regularizer (Smoke Test)
+# Purpose: Verify forward/backward pass works with rate loss, no NaN
+
+run:
+  name: step2-exp-a-ema-rate-smoke
+  seed: 42
+  device: auto
+  mps_fallback: true
+  epochs: 1
+  max_steps: 20
+  max_val_steps: 10
+  output_dir: runs/step2/exp-a-ema-rate-smoke
+  drop_last: true
+
+dataset:
+  name: cifar10_rot
+  data_root: data
+  seq_len: 3
+  rotations: [0, 90, 180, 270]
+  download: true
+  subset_train: 128
+  subset_val: 64
+  subset_seed: 42
+  batch_size: 16
+  num_workers: 0
+
+model:
+  img_size: 32
+  n_channels: 3
+  ema: true                    # Keep EMA for Experiment A
+  ema_decay: 0.996
+  teacherless: false           # Use EMA, not stop-grad
+  pred_hidden: 1024
+  num_heads: 4
+  num_enc_layers: 3
+  act_cond: 1
+  learn_act_emb: 1
+  act_latentdim: 2
+  act_projdim: 128
+  cifar_resnet: true
+  # Sharpening disabled for Experiment A
+  sharpening_enabled: false
+  symmetric: false
+
+loss:
+  rate_loss_enabled: true      # NEW: Enable coding-rate loss
+  lambda_rate: 0.01            # Weight for rate term
+  alpha: 1.0                   # Scaling for covariance
+  rate_target: agg_out         # Apply to z_AGG only
+  rate_use_stable: false
+
+optim:
+  lr: 0.001
+  weight_decay: 0.0
+  probe_lr: 0.001
+
+eval:
+  latent_type: rot
+  eval_type: rot
+  # Subspace eval disabled for smoke
+  subspace_enabled: false
+  subspace_frequency: 0
+  subspace_viz: false
+
+logging:
+  wandb:
+    enabled: true
+    project: seq-jepa-streaming
+    group: step2-exp-a-smoke
+    mode: online
+
+gating:
+  linacc_test_min: 12.0
+  r2_test_min: -0.3
+  # No subspace gates for smoke
+

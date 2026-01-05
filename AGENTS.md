@@ -16,6 +16,7 @@
 ## Docs hygiene
 - **Status tracking**: Always update `docs/status-tracker.md` when starting/completing work
 - **Experiment logs**: Document experiments in `docs/experiments/` following the template
+- **Experiment freshness**: Keep experiment logs aligned with the current config/state; archive superseded iterations on major changes
 - **Archiving**: When experiments are superseded, move configs to `configs/archive/` and logs to `docs/experiments/archive/` with a short note about what replaced them
 - **Decisions**: Log significant decisions in `docs/decisions/` with rationale
 - **Index**: Keep `docs/README.md` updated when adding or renaming notes

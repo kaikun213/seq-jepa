@@ -1,18 +1,18 @@
 # Status Tracker
 
-Last updated: 2026-01-04
+Last updated: 2026-01-05
 
 ## Current Focus
 
-**Active Step**: Step 1 - Baseline Reproduction  
-**Next Step**: Step 2 - Teacherless Rate
+**Active Step**: Step 2 - Teacherless Rate (Exp A & B baseline-lite complete)  
+**Next Step**: Run remote baselines, tune Exp B, run Exp C-E
 
 ## Milestone Status
 
 | Milestone | Status | Progress | Notes |
 |-----------|--------|----------|-------|
 | M1 (Baseline) | 🟡 In Progress | 95% | Paper-aligned CIFAR-100 run in progress |
-| M2 (Teacherless) | ⚪ Not Started | 0% | |
+| M2 (Teacherless) | 🟡 In Progress | 60% | Exp A ✓, Exp B needs tuning |
 | M3 (CRATE) | ⚪ Not Started | 0% | |
 | M4 (ToST) | ⚪ Not Started | 0% | |
 | M5 (Streaming) | ⚪ Not Started | 0% | |
@@ -24,13 +24,28 @@ Last updated: 2026-01-04
 |------|--------|-----------------|
 | Step 0 - Repo Setup | ✅ Complete | — |
 | Step 1 - Baseline Repro | 🟡 In Progress | Paper-aligned run in progress; eval pending |
-| Step 2 - Teacherless Rate | ⚪ Pending | Waiting on Step 1 |
+| Step 2 - Teacherless Rate | 🟡 In Progress | Exp A passing, Exp B needs tuning |
 | Step 3 - CRATE Integration | ⚪ Pending | |
 | Step 4 - ToST Streaming | ⚪ Pending | |
 | Step 5 - Streaming Continual | ⚪ Pending | |
 | Step 6 - Local Learning | ⚪ Pending | |
 
 ## Recent Work
+
+### 2026-01-05
+- **Step 2 experiments completed (local)**:
+  - Fixed SSL/Zscaler with `truststore` package in train.py
+  - **Exp A (EMA+Rate)**: Smoke ✓, Quick ✓, Baseline-lite ✓
+    - linacc: 34.1%, r2: 0.302 (passes all gates)
+    - W&B: [f1u4hzpj](https://wandb.ai/kaikun213/seq-jepa-streaming/runs/f1u4hzpj)
+  - **Exp B (StopGrad)**: Smoke ✓, Quick ✓, Baseline-lite ✓ (with issues)
+    - linacc: 27.8%, r2: 0.144 (fails linacc gate)
+    - Accuracy degraded in later epochs; needs tuning
+    - W&B: [khgtp6bt](https://wandb.ai/kaikun213/seq-jepa-streaming/runs/khgtp6bt)
+- **Key finding**: Coding rate prevents collapse, but stop-grad less stable than EMA
+- **Created experiment logs**: `docs/experiments/step-2-exp-a-ema-rate.md`, `step-2-exp-b-stopgrad.md`
+- **Previous session**: train.py integration, module creation
+- **Remaining**: Run remote baselines, tune Exp B, run Exp C-E
 
 ### 2026-01-04
 - Reorganized documentation structure into subdirectories
@@ -40,6 +55,7 @@ Last updated: 2026-01-04
 - Updated CIFAR-100 gate config and metrics/gates guidance for remote comparisons
 - Archived deprecated 10-epoch CIFAR-100 baseline artifacts and added local gate script/config
 - Started local 200-epoch CIFAR-100 gate run (MPS)
+- Interrupted local gate at epoch 110; updated gate to 30 epochs with new thresholds
 
 ### 2026-01-03
 - Smoke and quick runs passing on CIFAR-10 rotations

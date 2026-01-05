@@ -65,13 +65,12 @@ Gates are thresholds to decide whether to proceed to more expensive runs.
 - Quick gate:
   - `online_linacc_test >= 20.0`
   - `online_r2_test >= 0.0`
-  - `leakage_linacc_gap_min >= 0.0` (online >= leakage)
-  - `leakage_r2_gap_min >= 0.0` (online >= leakage)
 - Baseline-lite gate:
   - `online_linacc_test >= 30.0`
   - `online_r2_test >= 0.1`
-  - `leakage_linacc_gap_min >= 0.0` (online >= leakage)
-  - `leakage_r2_gap_min >= 0.0` (online >= leakage)
+
+Leakage metrics are tracked in quick runs but not gated, because short runs often
+show mixed invariance/equivariance signals.
 
 Gate status is written to W&B summary as `gate_pass` and `gate_reasons`.
 
@@ -79,6 +78,7 @@ Gate status is written to W&B summary as `gate_pass` and `gate_reasons`.
 ### Runs (local)
 - Gate (mid): `configs/local/cifar100_aug_baseline_gate.yaml`
 - Script: `scripts/local/run_cifar100_aug_baseline_gate.sh`
+  - Default: 30 epochs to keep runtime under ~2 hours on M3 Max.
 
 ### Metrics logged to W&B
 - Same online metrics as the CIFAR-10 gates (`online_*`, `leakage_*`).

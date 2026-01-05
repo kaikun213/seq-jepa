@@ -55,5 +55,3 @@ logging:
 gating:
   linacc_test_min: 2.0
   r2_test_min: 0.0
-  leakage_linacc_gap_min: 0.0
-  leakage_r2_gap_min: 0.0

@@ -60,7 +60,7 @@ Each experiment should follow this structure:
 |------------|------|------|--------|-------------|
 | baseline-smoke | Step 1 | - | ✅ | Smoke test passes |
 | baseline-quick | Step 1 | - | 🔄 | In progress |
-| baseline-cifar100-gate | Step 1 | 2026-01-04 | 🔄 | 200-epoch CIFAR-100 gate in progress |
+| baseline-cifar100-gate | Step 1 | 2026-01-04 | 🔄 | 30-epoch local CIFAR-100 gate in progress |
 | baseline-cifar100-paper | Step 1 | 2026-01-04 | 🔄 | Paper-aligned run in progress |
 
 ## Archive

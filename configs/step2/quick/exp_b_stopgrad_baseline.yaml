@@ -1,10 +1,13 @@
+# Experiment B: Stop-Gradient (Teacherless) + Coding-Rate (Baseline-lite)
+# Purpose: Confident local signal for teacherless mode
+
 run:
-  name: cifar10-rot-baseline
+  name: step2-exp-b-stopgrad-baseline-lite
   seed: 42
   device: auto
   mps_fallback: true
   epochs: 10
-  output_dir: runs/cifar10-rot-baseline
+  output_dir: runs/step2/exp-b-stopgrad-baseline-lite
   drop_last: true
 
 dataset:
@@ -22,8 +25,9 @@ dataset:
 model:
   img_size: 32
   n_channels: 3
-  ema: true
+  ema: false
   ema_decay: 0.996
+  teacherless: true
   pred_hidden: 1024
   num_heads: 4
   num_enc_layers: 3
@@ -32,6 +36,15 @@ model:
   act_latentdim: 2
   act_projdim: 128
   cifar_resnet: true
+  sharpening_enabled: false
+  symmetric: false
+
+loss:
+  rate_loss_enabled: true
+  lambda_rate: 0.01
+  alpha: 1.0
+  rate_target: agg_out
+  rate_use_stable: false
 
 optim:
   lr: 0.001
@@ -41,14 +54,25 @@ optim:
 eval:
   latent_type: rot
   eval_type: rot
+  subspace_enabled: true
+  subspace_frequency: 1
+  subspace_viz: true
 
 logging:
   wandb:
     enabled: true
     project: seq-jepa-streaming
-    group: local-baseline
+    group: step2-exp-b-baseline-lite
     mode: online
 
 gating:
   linacc_test_min: 30.0
   r2_test_min: 0.1
+  leakage_linacc_gap_min: 0.0
+  leakage_r2_gap_min: 0.0
+  gap_action_min: 0.0
+  gap_class_min: 0.0
+  # Collapse detection
+  rank_eq_eff_min: 10
+  rank_inv_eff_min: 10
+

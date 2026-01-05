@@ -12,4 +12,4 @@ if [[ -f "$REPO_ROOT/.venv/bin/activate" ]]; then
 fi
 
 echo "Using config: $CONFIG_PATH"
-python train.py --config "$CONFIG_PATH"
+PYTHONUNBUFFERED=1 python -u train.py --config "$CONFIG_PATH"

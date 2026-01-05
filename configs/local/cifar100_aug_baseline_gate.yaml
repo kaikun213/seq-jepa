@@ -3,7 +3,7 @@ run:
   seed: 42
   device: auto
   mps_fallback: true
-  epochs: 200
+  epochs: 30
   output_dir: runs/local/cifar100-aug-baseline-gate
   drop_last: true
   save_checkpoint: true
@@ -61,7 +61,5 @@ logging:
     mode: online
 
 gating:
-  linacc_test_min: 5.0
-  r2_test_min: 0.1
-  leakage_linacc_gap_min: 0.0
-  leakage_r2_gap_min: 0.0
+  linacc_test_min: 23.0
+  r2_test_min: 0.45
