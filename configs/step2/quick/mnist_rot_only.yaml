@@ -1,0 +1,71 @@
+# MNIST Rotation-Only: For clean circular trajectory visualization
+# Purpose: Test rotation subspace without translation/scale interference
+
+run:
+  name: step2-mnist-rot-only
+  seed: 42
+  device: auto
+  mps_fallback: true
+  epochs: 20
+  output_dir: runs/step2/mnist-rot-only
+  drop_last: true
+
+dataset:
+  name: mnist_affine
+  data_root: data
+  seq_len: 3
+  mode: rot_only                   # Only rotation - no translation/scale
+  rot_range: [-180, 180]           # Full rotation range for circular trajectory
+  trans_range: [0, 0]
+  scale_range: [1.0, 1.0]
+  download: true
+  subset_train: 10000
+  subset_val: 2000
+  subset_seed: 42
+  batch_size: 64
+  num_workers: 0
+
+model:
+  img_size: 28
+  n_channels: 3
+  ema: true
+  ema_decay: 0.996
+  teacherless: false
+  pred_hidden: 512
+  num_heads: 4
+  num_enc_layers: 2
+  act_cond: 1
+  learn_act_emb: 1
+  act_latentdim: 5                 # Full action vector (sin, cos, tx, ty, scale)
+  act_projdim: 64
+  cifar_resnet: true
+
+loss:
+  rate_loss_enabled: true
+  lambda_rate: 0.01
+  alpha: 1.0
+  rate_target: agg_out
+
+optim:
+  lr: 0.001
+  weight_decay: 0.0
+  probe_lr: 0.001
+
+eval:
+  latent_type: rot
+  eval_type: rot
+  subspace_enabled: true
+  subspace_frequency: 5
+  subspace_viz: true
+
+logging:
+  wandb:
+    enabled: true
+    project: seq-jepa-streaming
+    group: step2-mnist-subspace
+    mode: online
+
+gating:
+  linacc_test_min: 80.0
+  r2_test_min: 0.0
+

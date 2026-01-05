@@ -169,9 +169,10 @@ class MNISTAffineSequence(Dataset):
         sin_rot = math.sin(theta)
         cos_rot = math.cos(theta)
 
-        # Normalize translation
-        tx_norm = params["tx"] / max(abs(self.trans_range[0]), abs(self.trans_range[1]))
-        ty_norm = params["ty"] / max(abs(self.trans_range[0]), abs(self.trans_range[1]))
+        # Normalize translation (handle zero range case)
+        trans_max = max(abs(self.trans_range[0]), abs(self.trans_range[1]), 1)
+        tx_norm = params["tx"] / trans_max
+        ty_norm = params["ty"] / trans_max
 
         # Log scale
         log_scale = math.log(params["scale"])
@@ -195,11 +196,12 @@ class MNISTAffineSequence(Dataset):
         sin_rot = math.sin(theta)
         cos_rot = math.cos(theta)
 
-        # Relative translation
+        # Relative translation (handle zero range case)
         delta_tx = params_next["tx"] - params_curr["tx"]
         delta_ty = params_next["ty"] - params_curr["ty"]
-        tx_norm = delta_tx / max(abs(self.trans_range[0]), abs(self.trans_range[1]))
-        ty_norm = delta_ty / max(abs(self.trans_range[0]), abs(self.trans_range[1]))
+        trans_max = max(abs(self.trans_range[0]), abs(self.trans_range[1]), 1)
+        tx_norm = delta_tx / trans_max
+        ty_norm = delta_ty / trans_max
 
         # Relative scale (ratio in log space)
         delta_log_scale = math.log(params_next["scale"]) - math.log(params_curr["scale"])

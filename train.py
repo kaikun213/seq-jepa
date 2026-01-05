@@ -282,6 +282,7 @@ def compute_subspace_metrics(
     action_norm: bool,
     use_rel_latents: bool,
     factor_dims: dict = None,
+    return_tensors: bool = False,
 ) -> dict:
     """
     Compute subspace metrics on validation set.
@@ -290,6 +291,12 @@ def compute_subspace_metrics(
     - Explained variance in top-k dimensions per factor
     - Effective rank of representations
     - Coordinate sparsity of factor subspaces
+    
+    Args:
+        return_tensors: If True, also return raw tensors for visualizations.
+    
+    Returns:
+        dict with metrics, and optionally tensors for visualization.
     """
     import torch
     from experiments.eval.subspace_metrics import SubspaceMetrics
@@ -348,6 +355,15 @@ def compute_subspace_metrics(
         **{f"rank_{k}": v for k, v in rank_metrics.items()},
         **subspace_metrics,
     }
+    
+    if return_tensors:
+        # Return additional tensors for visualizations
+        metrics["_tensors"] = {
+            "z_eq": z1_cat,
+            "z_inv": agg_cat,
+            "delta_z_by_factor": delta_z_by_factor,
+            "factor_dims": factor_dims,
+        }
     
     return metrics
 
@@ -848,16 +864,48 @@ def main():
         eval_cfg = cfg.get("eval", {})
         subspace_enabled = eval_cfg.get("subspace_enabled", False)
         subspace_freq = eval_cfg.get("subspace_frequency", 1)
+        subspace_viz = eval_cfg.get("subspace_viz", False)
+        
         if subspace_enabled and subspace_freq > 0 and (epoch + 1) % subspace_freq == 0:
             try:
+                # Get factor_dims from dataset config if available
+                dataset_cfg = cfg.get("dataset", {})
+                factor_dims = None
+                if dataset_cfg.get("name") == "mnist_affine":
+                    factor_dims = {"rot": 2, "trans_x": 1, "trans_y": 1, "scale": 1}
+                elif dataset_cfg.get("name") in ("cifar10_rot", "cifar100_rot"):
+                    factor_dims = {"rot": 2}
+                
                 subspace_result = compute_subspace_metrics(
                     model,
                     val_loader,
                     device,
                     action_norm,
                     use_rel_latents,
+                    factor_dims=factor_dims,
+                    return_tensors=subspace_viz,
                 )
+                
+                # Extract tensors for visualization before updating result_row
+                tensors = subspace_result.pop("_tensors", None) if "_tensors" in subspace_result else None
                 result_row.update(subspace_result)
+                
+                # Log visualizations to W&B if enabled
+                if subspace_viz and tensors and wandb_run:
+                    try:
+                        from experiments.eval.viz import log_visualizations_to_wandb
+                        log_visualizations_to_wandb(
+                            metrics=subspace_result,
+                            delta_z_by_factor=tensors["delta_z_by_factor"],
+                            z_eq=tensors["z_eq"],
+                            z_inv=tensors["z_inv"],
+                            factor_dims=tensors["factor_dims"],
+                            step=epoch,
+                            prefix="viz",
+                        )
+                    except Exception as viz_e:
+                        print(f"Warning: Visualization logging failed: {viz_e}")
+                        
             except Exception as e:
                 print(f"Warning: Subspace metrics failed: {e}")
         

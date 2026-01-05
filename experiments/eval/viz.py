@@ -284,6 +284,7 @@ def log_visualizations_to_wandb(
 
     # Factor sweep trajectories
     if delta_z_by_factor:
+        # Individual factor plots
         for factor, delta_z in delta_z_by_factor.items():
             if delta_z is not None and delta_z.shape[0] >= 8:
                 try:
@@ -292,6 +293,23 @@ def log_visualizations_to_wandb(
                     plt.close(fig)
                 except Exception:
                     pass
+        
+        # Combined factor trajectory plot
+        try:
+            fig = plot_combined_factor_trajectories(delta_z_by_factor)
+            log_dict[f"{prefix}/combined_trajectories"] = wandb.Image(fig)
+            plt.close(fig)
+        except Exception:
+            pass
+        
+        # Special rotation circle plot if rotation is available
+        if "rot" in delta_z_by_factor and delta_z_by_factor["rot"] is not None:
+            try:
+                fig = plot_rotation_circle(delta_z_by_factor["rot"])
+                log_dict[f"{prefix}/rotation_circle"] = wandb.Image(fig)
+                plt.close(fig)
+            except Exception:
+                pass
 
         # Eigenvalue spectra
         for factor, delta_z in delta_z_by_factor.items():
@@ -337,6 +355,170 @@ def log_visualizations_to_wandb(
     # Log to W&B
     if log_dict:
         wandb.log(log_dict, step=step)
+
+
+def plot_rotation_circle(
+    delta_z: torch.Tensor,
+    angles: Optional[np.ndarray] = None,
+    figsize: Tuple[int, int] = (6, 6),
+) -> "plt.Figure":
+    """
+    Plot rotation-induced changes as a 2D trajectory.
+    
+    For clean rotation, this should trace a circle/ellipse.
+    Points are colored by rotation angle for intuition.
+    
+    Args:
+        delta_z: Rotation-induced changes, shape (N, d).
+        angles: Optional rotation angles in degrees for coloring.
+        figsize: Figure size.
+    
+    Returns:
+        Matplotlib figure.
+    """
+    _check_matplotlib()
+    
+    # Center and compute PCA
+    delta_z = delta_z - delta_z.mean(dim=0, keepdim=True)
+    _, _, Vh = torch.linalg.svd(delta_z, full_matrices=False)
+    basis = Vh[:2].T  # (d, 2)
+    
+    # Project to 2D
+    proj = (delta_z @ basis).numpy()  # (N, 2)
+    
+    fig, ax = plt.subplots(figsize=figsize)
+    
+    # Color by angle if provided
+    if angles is not None:
+        scatter = ax.scatter(proj[:, 0], proj[:, 1], c=angles, cmap='hsv', 
+                            s=30, alpha=0.7, edgecolors='none')
+        cbar = fig.colorbar(scatter, ax=ax, shrink=0.8)
+        cbar.set_label('Rotation angle (°)')
+    else:
+        ax.scatter(proj[:, 0], proj[:, 1], c='steelblue', s=30, alpha=0.7)
+    
+    # Add unit circle for reference
+    theta = np.linspace(0, 2*np.pi, 100)
+    r = max(np.abs(proj).max(), 1.0)
+    ax.plot(r * np.cos(theta), r * np.sin(theta), 'k--', alpha=0.2, linewidth=1)
+    
+    ax.set_xlabel("PC1 (expected: cos θ)")
+    ax.set_ylabel("PC2 (expected: sin θ)")
+    ax.set_title("Rotation Subspace (should be circular)")
+    ax.set_aspect('equal')
+    ax.grid(True, alpha=0.3)
+    
+    fig.tight_layout()
+    return fig
+
+
+def plot_translation_lines(
+    delta_z_x: torch.Tensor,
+    delta_z_y: torch.Tensor,
+    figsize: Tuple[int, int] = (10, 5),
+) -> "plt.Figure":
+    """
+    Plot translation-induced changes.
+    
+    X and Y translation should produce orthogonal linear trajectories.
+    
+    Args:
+        delta_z_x: X-translation changes, shape (N, d).
+        delta_z_y: Y-translation changes, shape (N, d).
+        figsize: Figure size.
+    
+    Returns:
+        Matplotlib figure.
+    """
+    _check_matplotlib()
+    
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=figsize)
+    
+    for ax, delta_z, label in [(ax1, delta_z_x, "X-translation"), 
+                                (ax2, delta_z_y, "Y-translation")]:
+        delta_z = delta_z - delta_z.mean(dim=0, keepdim=True)
+        _, _, Vh = torch.linalg.svd(delta_z, full_matrices=False)
+        basis = Vh[:2].T
+        proj = (delta_z @ basis).numpy()
+        
+        ax.scatter(proj[:, 0], proj[:, 1], c=np.arange(len(proj)), cmap='viridis', 
+                   s=30, alpha=0.7)
+        ax.set_xlabel("PC1")
+        ax.set_ylabel("PC2")
+        ax.set_title(f"{label} Subspace")
+        ax.set_aspect('equal')
+        ax.grid(True, alpha=0.3)
+    
+    fig.suptitle("Translation Subspaces (should be linear)")
+    fig.tight_layout()
+    return fig
+
+
+def plot_combined_factor_trajectories(
+    delta_z_by_factor: Dict[str, torch.Tensor],
+    figsize: Tuple[int, int] = (12, 4),
+) -> "plt.Figure":
+    """
+    Plot all factor trajectories side by side.
+    
+    Args:
+        delta_z_by_factor: Dict mapping factor name to delta-z tensor.
+        figsize: Figure size.
+    
+    Returns:
+        Matplotlib figure.
+    """
+    _check_matplotlib()
+    
+    factors = [f for f in delta_z_by_factor.keys() if delta_z_by_factor[f] is not None 
+               and len(delta_z_by_factor[f]) > 0]
+    n_factors = len(factors)
+    
+    if n_factors == 0:
+        fig, ax = plt.subplots(figsize=(6, 4))
+        ax.text(0.5, 0.5, "No factor data available", ha='center', va='center')
+        return fig
+    
+    fig, axes = plt.subplots(1, n_factors, figsize=(4*n_factors, 4))
+    if n_factors == 1:
+        axes = [axes]
+    
+    expected_shapes = {
+        "rot": "circle",
+        "trans_x": "line",
+        "trans_y": "line", 
+        "scale": "line",
+        "trans": "plane",
+    }
+    
+    for ax, factor in zip(axes, factors):
+        delta_z = delta_z_by_factor[factor]
+        delta_z = delta_z - delta_z.mean(dim=0, keepdim=True)
+        
+        try:
+            _, _, Vh = torch.linalg.svd(delta_z, full_matrices=False)
+            basis = Vh[:2].T
+            proj = (delta_z @ basis).numpy()
+            
+            # Color gradient based on sample order
+            colors = plt.cm.viridis(np.linspace(0, 1, len(proj)))
+            ax.scatter(proj[:, 0], proj[:, 1], c=colors, s=20, alpha=0.7)
+            
+            # Connect points to show trajectory
+            ax.plot(proj[:, 0], proj[:, 1], 'k-', alpha=0.2, linewidth=0.5)
+            
+            expected = expected_shapes.get(factor, "unknown")
+            ax.set_title(f"{factor.upper()}\n(expected: {expected})")
+            ax.set_xlabel("PC1")
+            ax.set_ylabel("PC2")
+            ax.set_aspect('equal')
+            ax.grid(True, alpha=0.3)
+        except Exception:
+            ax.text(0.5, 0.5, f"Error: {factor}", ha='center', va='center', transform=ax.transAxes)
+    
+    fig.suptitle("Factor Subspace Trajectories", fontsize=12)
+    fig.tight_layout()
+    return fig
 
 
 def close_all_figures():
