@@ -37,13 +37,48 @@ Test seq-JEPA with coding-rate regularizer on controlled MNIST affine transforms
 
 ## W&B Visualizations Logged
 
-The following visualizations are logged every `subspace_frequency` epochs:
+Visualizations are logged every `subspace_frequency` epochs (default: 5).
 
-1. **viz/sweep_traj_rot** - Rotation sweep trajectories in 2D PCA space
-2. **viz/rotation_circle** - Δz projected onto top-2 PCs (should form a circle)
-3. **viz/combined_trajectories** - All factor trajectories side by side
-4. **viz/eigs_rot** - Eigenvalue spectrum for rotation-induced Δz
-5. **viz/rank_monitor** - SVD spectra for collapse monitoring
+**File naming**: `viz/{plot_type}_{epoch}_{hash}.png`
+- The number (3, 8, 13, 18) = **epoch number** when the plot was generated
+- Example: `rotation_circle_18_xxx.png` = rotation circle at epoch 18
+
+### Visualization Reference
+
+| Plot | What It Shows | Ideal Result | Current Result |
+|------|--------------|--------------|----------------|
+| **sweep_traj_rot** | 8 anchor images traced through rotation sweep. Each color = one anchor, lines connect rotation steps | All anchors trace **parallel circular loops** | Chaotic lines radiating from center; no circular structure |
+| **rotation_circle** | All Δz samples projected onto top-2 PCs | **Clean circle/ellipse** (sin θ, cos θ) | Diffuse blob; rotation not in 2D |
+| **combined_trajectories** | All factors side-by-side (ROT only for this run). Color = sample index | Circular for rotation, linear for translation | Scattered cloud with weak structure |
+| **eigs_rot** | Eigenvalue spectrum of Δz covariance | **Sharp drop after k=2** (>95% in 2 dims) | Gradual decay; ~40% in top-2 |
+| **rank_monitor** | SVD spectra for z_eq (left) and z_inv (right) | z_inv more compressed than z_eq | ✅ Working: z_inv rank=6.2, z_eq rank=42.3 |
+
+### Detailed Interpretation
+
+**1. sweep_traj_rot (Sweep Trajectories)**
+- Shows how 8 different anchor images move through representation space as rotation is applied
+- In an ideal equivariant representation, all anchors would trace the **same circular path** (just at different offsets)
+- Current: Lines radiate chaotically from center → rotation causes inconsistent changes across images
+
+**2. rotation_circle**  
+- Projects all Δz = z(rotated) - z(original) onto the top 2 principal components
+- If rotation is encoded as (sin θ, cos θ), this should be a **perfect circle**
+- Current: Gaussian blob → rotation information spread across many dimensions, not 2
+
+**3. combined_trajectories**
+- Compact view of all factor subspaces (only ROT for rotation-only mode)
+- Color gradient shows sample ordering; lines connect sequential samples
+- Current: No clear circular pattern visible
+
+**4. eigs_rot (Eigenvalue Spectrum)**
+- Left: linear scale; Right: log scale
+- Red dashed line marks expected dimension (k=2 for rotation)
+- Current: First eigenvalue dominates but no sharp cutoff → rotation uses ~20-30 effective dimensions
+
+**5. rank_monitor (Collapse Detection)**
+- Compares SVD spectra of equivariant (z_eq) vs invariant (z_inv) representations
+- **Effective rank** shown in top-right corner
+- Current: z_eq rank=42 (high diversity ✅), z_inv rank=6 (compressed ✅) → no collapse, good separation
 
 ## Observations
 
@@ -128,6 +163,10 @@ The gap between our results and the Lie group paper suggests that **CRATE compon
 - [x] Integrate subspace metrics computation into eval loop ✅
 - [x] Add W&B visualizations (sweep trajectories, eigenspectra) ✅
 - [x] Run rotation-only mode for cleaner circular trajectories ✅
-- [ ] Test teacherless version on MNIST
-- [ ] Compare with CIFAR affine version
-- [ ] Step 3: Add CRATE components (MSSA/ISTA) for explicit subspace structure
+
+**Moved to Step 3 (CRATE Integration):**
+- Test CRATE components (MSSA/ISTA) for explicit subspace structure
+- Compare teacherless vs EMA with CRATE
+- Validate on CIFAR affine transforms
+
+See: `docs/plans/step-3-crate-integration.md`
