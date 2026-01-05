@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Onstart script for Step 2 Exp A (EMA + Rate)
+# With self-destruct capability
 set -euo pipefail
 
 WORKDIR="${WORKDIR:-/workspace}"
@@ -29,18 +30,28 @@ else
   exit 1
 fi
 
-# Export W&B credentials
-if [[ -n "${WANDB_API_KEY:-}" ]]; then
-  {
+# Export W&B and Vast credentials to environment
+{
+  if [[ -n "${WANDB_API_KEY:-}" ]]; then
     echo "WANDB_API_KEY=${WANDB_API_KEY}"
-    if [[ -n "${WANDB_PROJECT:-}" ]]; then
-      echo "WANDB_PROJECT=${WANDB_PROJECT}"
-    fi
-    if [[ -n "${WANDB_ENTITY:-}" ]]; then
-      echo "WANDB_ENTITY=${WANDB_ENTITY}"
-    fi
-  } >> /etc/environment
-fi
+  fi
+  if [[ -n "${WANDB_PROJECT:-}" ]]; then
+    echo "WANDB_PROJECT=${WANDB_PROJECT}"
+  fi
+  if [[ -n "${WANDB_ENTITY:-}" ]]; then
+    echo "WANDB_ENTITY=${WANDB_ENTITY}"
+  fi
+  # Pass through VAST_API_KEY for self-destruct
+  if [[ -n "${VAST_API_KEY:-}" ]]; then
+    echo "VAST_API_KEY=${VAST_API_KEY}"
+  fi
+  if [[ -n "${VAST_INSTANCE_ID:-}" ]]; then
+    echo "VAST_INSTANCE_ID=${VAST_INSTANCE_ID}"
+  fi
+} >> /etc/environment
+
+# Source for current shell
+source /etc/environment 2>/dev/null || true
 
 # Clone repo if not present
 if [[ ! -d "$REPO_DIR" ]]; then
@@ -65,6 +76,8 @@ else
   pip install -r "$REQS_FILE"
 fi
 
-# Run Exp A only
-scripts/vast/run_exp_a.sh
+# Install vastai CLI for self-destruct
+pip install vastai --quiet
 
+# Run Exp A
+scripts/vast/run_exp_a.sh

@@ -52,9 +52,11 @@ Note: At 30 epochs (1.5% of paper's 2000 epochs), we expect ~40% of final accura
 ### v1 (old config, still running)
 - Instance 29522248 - let complete to see if recovers
 
-### v2 (paper-aligned)
-- Launch: `scripts/vast/launch_step2_parallel.sh`
-- Creates separate instances for Exp A and Exp B
+### v2 (paper-aligned) ✅ Launched
+- **Exp A (EMA)**: Instance 29527387
+- **Exp B (Teacherless)**: Instance 29527388
+- GPU offers: 16320064, 28889471
+- Launched: 2026-01-05 ~18:30 UTC
 
 ## W&B
 
@@ -66,8 +68,9 @@ Runs will appear in: https://wandb.ai/kaikun213/seq-jepa-streaming
 ### v1 (problematic config) - Instance 29522248
 *Still running - monitoring for recovery*
 
-### v2 (paper-aligned)
-*Pending launch*
+### v2 (paper-aligned) - Running
+- Exp A (EMA): Instance 29527387 - *Running*
+- Exp B (Teacherless): Instance 29527388 - *Running*
 
 ## Next Steps
 

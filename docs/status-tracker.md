@@ -11,7 +11,9 @@ Last updated: 2026-01-05
 
 | Instance ID | Label | GPU | Status | W&B Run | Notes |
 |-------------|-------|-----|--------|---------|-------|
-| 29522248 | seqjepa-step2 | RTX 3060 | 🟢 Running | TBD | Step 2 experiments |
+| 29522248 | seqjepa-step2 | RTX 3060 | 🟡 Running (v1) | TBD | Old config, monitoring for recovery |
+| 29527387 | seqjepa-step2-exp-a | RTX 4090/3090 | 🟢 Running (v2) | TBD | EMA + Rate, paper-aligned |
+| 29527388 | seqjepa-step2-exp-b | RTX 4090/3090 | 🟢 Running (v2) | TBD | Teacherless + Rate, paper-aligned |
 
 ## Milestone Status
 
@@ -30,7 +32,7 @@ Last updated: 2026-01-05
 |------|--------|-----------------|
 | Step 0 - Repo Setup | ✅ Complete | — |
 | Step 1 - Baseline Repro | ✅ Complete | Paper run finished: [eg1gydas](https://wandb.ai/kaikun213/seq-jepa-streaming/runs/eg1gydas) |
-| Step 2 - Teacherless Rate | 🟡 In Progress | Remote experiments running (instance 29522248) |
+| Step 2 - Teacherless Rate | 🟡 In Progress | v2 running in parallel (29527387, 29527388) |
 | Step 3 - CRATE Integration | ⚪ Pending | |
 | Step 4 - ToST Streaming | ⚪ Pending | |
 | Step 5 - Streaming Continual | ⚪ Pending | |
@@ -74,7 +76,11 @@ Last updated: 2026-01-05
   - `configs/remote/step2_exp_b_teacherless.yaml` (30 epochs, Teacherless)
   - Launch: `scripts/vast/launch_step2.sh`
 - **Decision**: Skip Exp C-E (sharpening, symmetric, CRATE) - teacherless works, keep simple
-- **Remaining**: Run remote, compare EMA vs Teacherless, then step-3 CRATE
+- **Config fix**: v1 remote run had divergent config (batch_size=128, lr=0.001, no weight_decay)
+  - Fixed to paper defaults: batch_size=512, lr=0.0004, weight_decay=0.001, AdamW
+- **v2 parallel launch**: Instances 29527387 (EMA), 29527388 (Teacherless) on RTX 4090/3090
+- **GPU preference updated**: RTX 4090 primary, RTX 3090 backup
+- **Remaining**: Monitor v2 runs, compare EMA vs Teacherless, then step-3 CRATE
 
 ### 2026-01-04
 - Reorganized documentation structure into subdirectories

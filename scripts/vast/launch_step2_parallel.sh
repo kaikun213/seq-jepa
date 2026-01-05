@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Launch Step 2 experiments in PARALLEL on Vast.ai
 # Creates two separate instances for EMA and Teacherless
+# Instances self-destruct after completion (no polling needed)
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -33,22 +34,6 @@ if [[ -n "${GITHUB_SSH_KEY_PATH:-}" ]]; then
   GITHUB_SSH_KEY_B64="$(base64 < "$GITHUB_SSH_KEY_PATH" | tr -d '\n')"
 fi
 
-ENV_ARGS=("-e" "WANDB_API_KEY=${WANDB_API_KEY}")
-if [[ -n "${WANDB_PROJECT:-}" ]]; then
-  ENV_ARGS+=("-e" "WANDB_PROJECT=${WANDB_PROJECT}")
-fi
-if [[ -n "${WANDB_ENTITY:-}" ]]; then
-  ENV_ARGS+=("-e" "WANDB_ENTITY=${WANDB_ENTITY}")
-fi
-if [[ -n "${GITHUB_TOKEN:-}" ]]; then
-  ENV_ARGS+=("-e" "GITHUB_TOKEN=${GITHUB_TOKEN}")
-fi
-if [[ -n "$GITHUB_SSH_KEY_B64" ]]; then
-  ENV_ARGS+=("-e" "GITHUB_SSH_KEY_B64=${GITHUB_SSH_KEY_B64}")
-fi
-
-ENV_STRING="${ENV_ARGS[*]}"
-
 if [[ -z "${GITHUB_TOKEN:-}" && -z "$GITHUB_SSH_KEY_B64" ]]; then
   echo "Set GITHUB_SSH_KEY_PATH or GITHUB_TOKEN for repo clone." >&2
   exit 1
@@ -58,6 +43,7 @@ echo "========================================="
 echo "Launching Step 2 Experiments in PARALLEL"
 echo "Exp A: EMA + Rate (30 epochs, paper-aligned)"
 echo "Exp B: Teacherless + Rate (30 epochs, paper-aligned)"
+echo "Auto-destruct: ENABLED (instances destroy themselves)"
 echo "Expected runtime: ~30-60 min each on RTX 4090"
 echo "========================================="
 echo "Searching offers: $QUERY"
@@ -75,9 +61,8 @@ except json.JSONDecodeError:
     print("")
     sys.exit(0)
 if len(data) < 2:
-    # Not enough offers for parallel
     if data:
-        print(f"{data[0]['id']} {data[0]['id']}")  # Use same offer twice
+        print(f"{data[0]['id']} {data[0]['id']}")
     sys.exit(0)
 print(f"{data[0]['id']} {data[1]['id']}")
 PY
@@ -94,22 +79,55 @@ fi
 echo "Selected offer for Exp A: $OFFER_A"
 echo "Selected offer for Exp B: $OFFER_B"
 
-# Launch Exp A
-echo ""
-echo "Creating instance for Exp A (EMA + Rate)..."
-CREATE_A_JSON=$(vastai create instance "$OFFER_A" \
-  --image "$IMAGE" \
-  --disk "$DISK_GB" \
-  --label "seqjepa-step2-exp-a" \
-  --ssh --direct \
-  --onstart "$REPO_ROOT/scripts/vast/onstart_exp_a.sh" \
-  --env "$ENV_STRING" \
-  --api-key "$VAST_API_KEY" \
-  --raw)
-
-INSTANCE_A=$(CREATE_A_JSON="$CREATE_A_JSON" python - <<'PY'
+# Function to create instance with self-destruct
+# We create a custom onstart that includes the instance ID
+create_instance_with_selfdestruct() {
+  local OFFER_ID="$1"
+  local LABEL="$2"
+  local EXP_SCRIPT="$3"  # e.g., run_exp_a.sh or run_exp_b.sh
+  
+  # Create a temporary onstart script that includes the instance ID placeholder
+  # We'll use a two-step approach: create instance, then update env
+  
+  local ENV_ARGS=("-e" "WANDB_API_KEY=${WANDB_API_KEY}" "-e" "VAST_API_KEY=${VAST_API_KEY}")
+  if [[ -n "${WANDB_PROJECT:-}" ]]; then
+    ENV_ARGS+=("-e" "WANDB_PROJECT=${WANDB_PROJECT}")
+  fi
+  if [[ -n "${WANDB_ENTITY:-}" ]]; then
+    ENV_ARGS+=("-e" "WANDB_ENTITY=${WANDB_ENTITY}")
+  fi
+  if [[ -n "${GITHUB_TOKEN:-}" ]]; then
+    ENV_ARGS+=("-e" "GITHUB_TOKEN=${GITHUB_TOKEN}")
+  fi
+  if [[ -n "$GITHUB_SSH_KEY_B64" ]]; then
+    ENV_ARGS+=("-e" "GITHUB_SSH_KEY_B64=${GITHUB_SSH_KEY_B64}")
+  fi
+  
+  local ENV_STRING="${ENV_ARGS[*]}"
+  
+  # Determine which onstart script to use
+  local ONSTART_SCRIPT
+  if [[ "$EXP_SCRIPT" == "run_exp_a.sh" ]]; then
+    ONSTART_SCRIPT="$REPO_ROOT/scripts/vast/onstart_exp_a.sh"
+  else
+    ONSTART_SCRIPT="$REPO_ROOT/scripts/vast/onstart_exp_b.sh"
+  fi
+  
+  local CREATE_JSON
+  CREATE_JSON=$(vastai create instance "$OFFER_ID" \
+    --image "$IMAGE" \
+    --disk "$DISK_GB" \
+    --label "$LABEL" \
+    --ssh --direct \
+    --onstart "$ONSTART_SCRIPT" \
+    --env "$ENV_STRING" \
+    --api-key "$VAST_API_KEY" \
+    --raw)
+  
+  local INSTANCE_ID
+  INSTANCE_ID=$(CREATE_JSON="$CREATE_JSON" python - <<'PY'
 import json, re, os
-raw = os.environ.get("CREATE_A_JSON", "")
+raw = os.environ.get("CREATE_JSON", "")
 instance_id = ""
 try:
     data = json.loads(raw.strip())
@@ -123,10 +141,37 @@ except Exception:
 print(instance_id)
 PY
 )
+  
+  if [[ -z "$INSTANCE_ID" ]]; then
+    echo "Failed to create instance for $LABEL. Raw response:" >&2
+    echo "$CREATE_JSON" >&2
+    echo ""
+    return 1
+  fi
+  
+  # Update the instance environment to include VAST_INSTANCE_ID for self-destruct
+  # This happens before the onstart script runs the actual training
+  echo "Updating env with instance ID for self-destruct..."
+  vastai change env "$INSTANCE_ID" \
+    -e "WANDB_API_KEY=${WANDB_API_KEY}" \
+    -e "VAST_API_KEY=${VAST_API_KEY}" \
+    -e "VAST_INSTANCE_ID=${INSTANCE_ID}" \
+    ${WANDB_PROJECT:+-e "WANDB_PROJECT=${WANDB_PROJECT}"} \
+    ${WANDB_ENTITY:+-e "WANDB_ENTITY=${WANDB_ENTITY}"} \
+    ${GITHUB_TOKEN:+-e "GITHUB_TOKEN=${GITHUB_TOKEN}"} \
+    ${GITHUB_SSH_KEY_B64:+-e "GITHUB_SSH_KEY_B64=${GITHUB_SSH_KEY_B64}"} \
+    --api-key "$VAST_API_KEY" 2>/dev/null || true
+  
+  echo "$INSTANCE_ID"
+}
+
+# Launch Exp A
+echo ""
+echo "Creating instance for Exp A (EMA + Rate)..."
+INSTANCE_A=$(create_instance_with_selfdestruct "$OFFER_A" "seqjepa-step2-exp-a" "run_exp_a.sh")
 
 if [[ -z "$INSTANCE_A" ]]; then
-  echo "Failed to create instance for Exp A. Raw response:"
-  echo "$CREATE_A_JSON"
+  echo "Failed to create Exp A instance"
   exit 1
 fi
 echo "Created Exp A instance: $INSTANCE_A"
@@ -134,47 +179,32 @@ echo "Created Exp A instance: $INSTANCE_A"
 # Launch Exp B
 echo ""
 echo "Creating instance for Exp B (Teacherless + Rate)..."
-CREATE_B_JSON=$(vastai create instance "$OFFER_B" \
-  --image "$IMAGE" \
-  --disk "$DISK_GB" \
-  --label "seqjepa-step2-exp-b" \
-  --ssh --direct \
-  --onstart "$REPO_ROOT/scripts/vast/onstart_exp_b.sh" \
-  --env "$ENV_STRING" \
-  --api-key "$VAST_API_KEY" \
-  --raw)
-
-INSTANCE_B=$(CREATE_B_JSON="$CREATE_B_JSON" python - <<'PY'
-import json, re, os
-raw = os.environ.get("CREATE_B_JSON", "")
-instance_id = ""
-try:
-    data = json.loads(raw.strip())
-    instance_id = str(data.get("new_contract", "") or "")
-except Exception:
-    match = re.search(r"\"new_contract\"\s*:\s*(\d+)", raw) or re.search(
-        r"new_contract\s*[:=]\s*(\d+)", raw
-    )
-    if match:
-        instance_id = match.group(1)
-print(instance_id)
-PY
-)
+INSTANCE_B=$(create_instance_with_selfdestruct "$OFFER_B" "seqjepa-step2-exp-b" "run_exp_b.sh")
 
 if [[ -z "$INSTANCE_B" ]]; then
-  echo "Failed to create instance for Exp B. Raw response:"
-  echo "$CREATE_B_JSON"
-  # Don't exit - Exp A is already running
+  echo "Failed to create Exp B instance"
   echo "WARNING: Exp A is running on instance $INSTANCE_A"
 else
   echo "Created Exp B instance: $INSTANCE_B"
 fi
+
+# Wait a moment for instances to start, then verify they're running
+echo ""
+echo "Waiting for instances to start..."
+sleep 15
+
+# Check instance status
+echo "Checking instance status..."
+vastai show instances --api-key "$VAST_API_KEY" 2>/dev/null | grep -E "(seqjepa-step2-exp|ID)" || true
 
 echo ""
 echo "========================================="
 echo "Both experiments launched!"
 echo "Exp A (EMA): Instance $INSTANCE_A"
 echo "Exp B (Teacherless): Instance ${INSTANCE_B:-FAILED}"
+echo ""
+echo "🔥 AUTO-DESTRUCT ENABLED"
+echo "Instances will destroy themselves after completion."
 echo ""
 echo "Monitor on W&B: https://wandb.ai/kaikun213/seq-jepa-streaming"
 echo "Group: step2-remote"
@@ -183,9 +213,8 @@ echo ""
 echo "To check status:"
 echo "  vastai show instances --api-key \$VAST_API_KEY"
 echo ""
-echo "To destroy when done:"
+echo "To manually destroy if needed:"
 echo "  vastai destroy instance $INSTANCE_A --api-key \$VAST_API_KEY"
 if [[ -n "${INSTANCE_B:-}" ]]; then
   echo "  vastai destroy instance $INSTANCE_B --api-key \$VAST_API_KEY"
 fi
-
