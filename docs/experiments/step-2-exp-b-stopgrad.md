@@ -56,10 +56,42 @@ The stop-gradient approach successfully prevents collapse (coding rate keeps inc
 - Representations become less stable over longer training
 - May need: different λ_rate, LR schedule, or warmup period
 
+### Tuning Experiments
+
+#### Higher λ_rate (0.1)
+- **Loss**: -41.2 (rate dominates)
+- **linacc_test**: 21.4% (worse - degraded)
+- **W&B**: [mndlms9u](https://wandb.ai/kaikun213/seq-jepa-streaming/runs/mndlms9u)
+- **Finding**: Too high - rate loss dominates prediction loss
+
+#### Warmup + Cosine LR + λ_rate=0.03 ✅
+- **Loss**: -10.7
+- **linacc_test**: **30.0%** (passes gate ✓)
+- **r2_test**: **0.423** (passes gate ✓)
+- **gate_pass**: **True** ✓
+- **W&B**: [sjd2550e](https://wandb.ai/kaikun213/seq-jepa-streaming/runs/sjd2550e)
+- **Finding**: **Cosine LR with 2-epoch warmup stabilizes teacherless training!**
+
+## Updated Comparison
+
+| Metric | Exp A (EMA) | Exp B (Original) | Exp B (Tuned) |
+|--------|-------------|------------------|---------------|
+| linacc | 34.1% | 27.8% | **30.0%** |
+| r2 | 0.302 | 0.144 | **0.423** |
+| gate | ✓ | ✗ | **✓** |
+
+## Key Finding (Updated)
+
+**Teacherless training works with proper tuning!** 
+
+The key ingredients:
+1. **Moderate λ_rate** (0.03 not 0.01 or 0.1)
+2. **Cosine LR schedule** with warmup
+3. **Coding rate regularizer** to prevent collapse
+
 ## Next Steps
 
-- [ ] Try higher λ_rate (0.05, 0.1) for stronger anti-collapse
-- [ ] Add LR warmup/cosine schedule
 - [ ] Run remote baseline on CIFAR-100
+- [ ] Test with MNIST for subspace analysis
 - [ ] Compare with Exp D (DINO sharpening)
 

@@ -1,0 +1,73 @@
+# MNIST Subspace Diagnostics: EMA + Rate Loss
+# Purpose: Analyze factor subspaces (rotation, translation, scale) with rate loss
+
+run:
+  name: step2-mnist-subspace-ema-rate
+  seed: 42
+  device: auto
+  mps_fallback: true
+  epochs: 20
+  output_dir: runs/step2/mnist-subspace-ema-rate
+  drop_last: true
+
+dataset:
+  name: mnist_affine             # New controlled dataset
+  data_root: data
+  seq_len: 3
+  mode: multi                    # All transforms: rot, trans, scale
+  rot_range: [-75, 75]
+  trans_range: [-7, 7]
+  scale_range: [0.5, 1.0]
+  download: true
+  subset_train: 10000            # Moderate size for analysis
+  subset_val: 2000
+  subset_seed: 42
+  batch_size: 64
+  num_workers: 0
+
+model:
+  img_size: 28                   # MNIST size
+  n_channels: 3                  # Expanded grayscale (1->3 for ResNet)
+  ema: true                      # Keep EMA
+  ema_decay: 0.996
+  teacherless: false
+  pred_hidden: 512               # Smaller for MNIST
+  num_heads: 4
+  num_enc_layers: 2
+  act_cond: 1
+  learn_act_emb: 1
+  act_latentdim: 5               # rot(2) + trans(2) + scale(1)
+  act_projdim: 64
+  cifar_resnet: true             # Still use CIFAR-style ResNet (works for 28x28)
+
+loss:
+  rate_loss_enabled: true
+  lambda_rate: 0.01
+  alpha: 1.0
+  rate_target: agg_out
+
+optim:
+  lr: 0.001
+  weight_decay: 0.0
+  probe_lr: 0.001
+
+eval:
+  latent_type: multi
+  eval_type: multi
+  # Enable subspace diagnostics
+  subspace_enabled: true
+  subspace_frequency: 5          # Every 5 epochs
+  subspace_viz: true             # Generate W&B charts
+  subspace_probes: true
+
+logging:
+  wandb:
+    enabled: true
+    project: seq-jepa-streaming
+    group: step2-mnist-subspace
+    mode: online
+
+gating:
+  linacc_test_min: 80.0          # MNIST should be higher
+  r2_test_min: 0.0
+

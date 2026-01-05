@@ -4,15 +4,15 @@ Last updated: 2026-01-05
 
 ## Current Focus
 
-**Active Step**: Step 2 - Teacherless Rate (Exp A & B baseline-lite complete)  
-**Next Step**: Run remote baselines, tune Exp B, run Exp C-E
+**Active Step**: Step 2 - Teacherless Rate (Exp A ✓, Exp B tuned ✓, MNIST subspace ✓)  
+**Next Step**: Integrate subspace metrics into eval, run Exp C-E, then remote baselines
 
 ## Milestone Status
 
 | Milestone | Status | Progress | Notes |
 |-----------|--------|----------|-------|
 | M1 (Baseline) | 🟡 In Progress | 95% | Paper-aligned CIFAR-100 run in progress |
-| M2 (Teacherless) | 🟡 In Progress | 60% | Exp A ✓, Exp B needs tuning |
+| M2 (Teacherless) | 🟡 In Progress | 75% | Exp A ✓, Exp B tuned ✓, MNIST subspace initial run ✓ |
 | M3 (CRATE) | ⚪ Not Started | 0% | |
 | M4 (ToST) | ⚪ Not Started | 0% | |
 | M5 (Streaming) | ⚪ Not Started | 0% | |
@@ -24,7 +24,7 @@ Last updated: 2026-01-05
 |------|--------|-----------------|
 | Step 0 - Repo Setup | ✅ Complete | — |
 | Step 1 - Baseline Repro | 🟡 In Progress | Paper-aligned run in progress; eval pending |
-| Step 2 - Teacherless Rate | 🟡 In Progress | Exp A passing, Exp B needs tuning |
+| Step 2 - Teacherless Rate | 🟡 In Progress | Exp A ✓, Exp B tuned ✓, subspace pending |
 | Step 3 - CRATE Integration | ⚪ Pending | |
 | Step 4 - ToST Streaming | ⚪ Pending | |
 | Step 5 - Streaming Continual | ⚪ Pending | |
@@ -38,14 +38,20 @@ Last updated: 2026-01-05
   - **Exp A (EMA+Rate)**: Smoke ✓, Quick ✓, Baseline-lite ✓
     - linacc: 34.1%, r2: 0.302 (passes all gates)
     - W&B: [f1u4hzpj](https://wandb.ai/kaikun213/seq-jepa-streaming/runs/f1u4hzpj)
-  - **Exp B (StopGrad)**: Smoke ✓, Quick ✓, Baseline-lite ✓ (with issues)
-    - linacc: 27.8%, r2: 0.144 (fails linacc gate)
-    - Accuracy degraded in later epochs; needs tuning
-    - W&B: [khgtp6bt](https://wandb.ai/kaikun213/seq-jepa-streaming/runs/khgtp6bt)
-- **Key finding**: Coding rate prevents collapse, but stop-grad less stable than EMA
-- **Created experiment logs**: `docs/experiments/step-2-exp-a-ema-rate.md`, `step-2-exp-b-stopgrad.md`
-- **Previous session**: train.py integration, module creation
-- **Remaining**: Run remote baselines, tune Exp B, run Exp C-E
+  - **Exp B (StopGrad)**: Multiple tuning iterations
+    - Original: linacc 27.8%, r2 0.144 (failed - degraded in later epochs)
+    - High λ_rate (0.1): linacc 21.4% (worse - rate dominated)
+    - **Tuned (warmup + cosine + λ=0.03)**: linacc 30.0%, r2 0.423 ✓
+    - W&B: [sjd2550e](https://wandb.ai/kaikun213/seq-jepa-streaming/runs/sjd2550e)
+  - **MNIST Subspace Diagnostics**: Initial run with EMA+rate
+    - 20 epochs, r2: 0.256-0.370 (equivariance learning ✓)
+    - W&B: [7z37n2lu](https://wandb.ai/kaikun213/seq-jepa-streaming/runs/7z37n2lu)
+- **Key findings**:
+  1. Coding rate prevents collapse in both EMA and stop-grad modes
+  2. Stop-grad needs cosine LR + warmup for stability
+  3. λ_rate=0.03 is optimal (0.01 too weak, 0.1 too strong)
+- **Created experiment logs**: `step-2-exp-a-ema-rate.md`, `step-2-exp-b-stopgrad.md`, `step-2-mnist-subspace.md`
+- **Remaining**: Integrate subspace metrics into eval loop, run Exp C-E, remote baselines
 
 ### 2026-01-04
 - Reorganized documentation structure into subdirectories

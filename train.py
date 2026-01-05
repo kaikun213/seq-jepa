@@ -565,9 +565,40 @@ def main():
         act_latentdim_default = train_ds.num_params
         action_norm = bool(dataset_cfg.get("action_norm", True))
         use_rel_latents = bool(dataset_cfg.get("use_rel_latents", False))
+    elif dataset_name == "mnist_affine":
+        from experiments.datasets_mnist_affine import MNISTAffineSequence
+        mode = dataset_cfg.get("mode", "multi")
+        rot_range = tuple(dataset_cfg.get("rot_range", [-75, 75]))
+        trans_range = tuple(dataset_cfg.get("trans_range", [-7, 7]))
+        scale_range = tuple(dataset_cfg.get("scale_range", [0.5, 1.0]))
+        train_ds = MNISTAffineSequence(
+            root=data_root,
+            split="train",
+            seq_len=seq_len,
+            mode=mode,
+            rot_range=rot_range,
+            trans_range=trans_range,
+            scale_range=scale_range,
+            download=download,
+        )
+        val_ds = MNISTAffineSequence(
+            root=data_root,
+            split="test",
+            seq_len=seq_len,
+            mode=mode,
+            rot_range=rot_range,
+            trans_range=trans_range,
+            scale_range=scale_range,
+            download=download,
+        )
+        num_classes = 10
+        # 5D: rot(sin,cos), trans_x, trans_y, log_scale
+        act_latentdim_default = 5
+        action_norm = bool(dataset_cfg.get("action_norm", False))
+        use_rel_latents = bool(dataset_cfg.get("use_rel_latents", True))
     else:
         raise ValueError(
-            "dataset.name must be one of: 'cifar10_rot', 'cifar100_aug'."
+            "dataset.name must be one of: 'cifar10_rot', 'cifar100_aug', 'mnist_affine'."
         )
 
     batch_size = int(dataset_cfg.get("batch_size", 32))

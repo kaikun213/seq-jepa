@@ -42,6 +42,7 @@ class MNISTAffineSequence(Dataset):
         normalize: bool = True,
         download: bool = True,
         pad_size: int = 40,  # Pad to allow transforms without cropping
+        expand_channels: bool = True,  # Repeat grayscale to 3 channels for ResNet
     ) -> None:
         """
         Args:
@@ -68,6 +69,7 @@ class MNISTAffineSequence(Dataset):
         self.trans_range = trans_range
         self.scale_range = scale_range
         self.pad_size = pad_size
+        self.expand_channels = expand_channels
 
         self.base = torchvision.datasets.MNIST(
             root=root,
@@ -249,8 +251,16 @@ class MNISTAffineSequence(Dataset):
         if self.normalize is not None:
             orig_img = self.normalize(orig_img)
 
+        # Stack views
+        stacked_views = torch.stack(views, dim=0)
+        
+        # Expand grayscale to 3 channels for ResNet compatibility
+        if self.expand_channels:
+            stacked_views = stacked_views.repeat(1, 3, 1, 1)  # (num_views, 3, H, W)
+            orig_img = orig_img.repeat(3, 1, 1)  # (3, H, W)
+
         return (
-            torch.stack(views, dim=0),
+            stacked_views,
             torch.stack(actions_abs, dim=0),
             torch.stack(actions_rel, dim=0),
             label,
