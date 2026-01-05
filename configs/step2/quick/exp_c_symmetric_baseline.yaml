@@ -1,0 +1,71 @@
+# Experiment C: Symmetric Loss (forward + reverse prediction)
+# Tests if bidirectional prediction helps stabilize training without EMA
+
+run:
+  name: step2-exp-c-symmetric-baseline-lite
+  seed: 42
+  device: auto
+  mps_fallback: true
+  epochs: 10
+  output_dir: runs/step2/exp-c-symmetric-baseline-lite
+  drop_last: true
+
+dataset:
+  name: cifar10_rot
+  data_root: data
+  seq_len: 3
+  rotations: [0, 90, 180, 270]
+  download: true
+  subset_train: 20000
+  subset_val: 2000
+  subset_seed: 42
+  batch_size: 128
+  num_workers: 0
+
+model:
+  img_size: 32
+  n_channels: 3
+  ema: true           # Keep EMA for comparison (can disable later)
+  ema_decay: 0.996
+  teacherless: false
+  symmetric: true     # Enable symmetric loss
+  pred_hidden: 1024
+  num_heads: 4
+  num_enc_layers: 3
+  act_cond: 1
+  learn_act_emb: 1
+  act_latentdim: 2
+  act_projdim: 128
+  cifar_resnet: true
+
+loss:
+  rate_loss_enabled: true
+  lambda_rate: 0.01
+  alpha: 1.0
+  rate_target: agg_out
+
+optim:
+  lr: 0.001
+  weight_decay: 0.0
+  probe_lr: 0.001
+  scheduler: cosine
+  warmup_epochs: 2
+  min_lr: 0.00001
+
+eval:
+  latent_type: rot
+  eval_type: rot
+  subspace_enabled: true
+  subspace_frequency: 5
+
+logging:
+  wandb:
+    enabled: true
+    project: seq-jepa-streaming
+    group: step2-exp-c-symmetric
+    mode: online
+
+gating:
+  linacc_test_min: 30.0
+  r2_test_min: 0.1
+

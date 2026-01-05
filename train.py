@@ -275,6 +275,83 @@ def _compute_r2(targets, preds) -> float:
     return r2_score(targets_np, preds_np)
 
 
+def compute_subspace_metrics(
+    model,
+    val_loader,
+    device,
+    action_norm: bool,
+    use_rel_latents: bool,
+    factor_dims: dict = None,
+) -> dict:
+    """
+    Compute subspace metrics on validation set.
+    
+    Collects delta_z = z2 - z1 and computes:
+    - Explained variance in top-k dimensions per factor
+    - Effective rank of representations
+    - Coordinate sparsity of factor subspaces
+    """
+    import torch
+    from experiments.eval.subspace_metrics import SubspaceMetrics
+    from experiments.eval.inv_eq_metrics import compute_rank_metrics
+
+    model.eval()
+    
+    # Default factor dimensions (rotation-only for CIFAR10_rot)
+    if factor_dims is None:
+        factor_dims = {"rot": 2}
+    
+    subspace_collector = SubspaceMetrics(factor_dims=factor_dims)
+    
+    # Collect all z1, z2, agg_out, delta_z
+    all_z1 = []
+    all_z2 = []
+    all_agg = []
+    all_delta_z = []
+    
+    with torch.no_grad():
+        for batch in val_loader:
+            batch_data, actions_abs, actions_rel, labels = unpack_batch(batch, device, action_norm)
+            
+            rel_latents = actions_rel if use_rel_latents else None
+            _, agg_out, z1, z2 = model(
+                batch_data[:, :-1],
+                batch_data[:, -1],
+                actions_abs[:, :-1],
+                actions_abs[:, -1],
+                rel_latents=rel_latents,
+            )
+            
+            all_z1.append(z1.cpu())
+            all_z2.append(z2.cpu())
+            all_agg.append(agg_out.cpu())
+            all_delta_z.append((z2 - z1).cpu())
+    
+    # Concatenate all samples
+    z1_cat = torch.cat(all_z1, dim=0)
+    z2_cat = torch.cat(all_z2, dim=0)
+    agg_cat = torch.cat(all_agg, dim=0)
+    delta_z_cat = torch.cat(all_delta_z, dim=0)
+    
+    # Compute rank metrics (z_inv=agg_out, z_eq=z1)
+    rank_metrics = compute_rank_metrics(agg_cat, z1_cat)
+    
+    # For now, treat all delta_z as coming from the primary factor
+    # (In multi-factor datasets, we'd split by factor type)
+    delta_z_by_factor = {"rot": delta_z_cat}
+    
+    # Compute subspace metrics
+    subspace_metrics = subspace_collector.compute_all(delta_z_by_factor)
+    
+    # Combine all metrics
+    metrics = {
+        **{f"rank_{k}": v for k, v in rank_metrics.items()},
+        **subspace_metrics,
+    }
+    
+    return metrics
+
+
 def train_one_epoch_local(
     model,
     linprobe,
@@ -766,6 +843,24 @@ def main():
             use_rel_latents,
         )
         result_row = {**train_result, **val_result}
+        
+        # Compute subspace metrics if enabled
+        eval_cfg = cfg.get("eval", {})
+        subspace_enabled = eval_cfg.get("subspace_enabled", False)
+        subspace_freq = eval_cfg.get("subspace_frequency", 1)
+        if subspace_enabled and subspace_freq > 0 and (epoch + 1) % subspace_freq == 0:
+            try:
+                subspace_result = compute_subspace_metrics(
+                    model,
+                    val_loader,
+                    device,
+                    action_norm,
+                    use_rel_latents,
+                )
+                result_row.update(subspace_result)
+            except Exception as e:
+                print(f"Warning: Subspace metrics failed: {e}")
+        
         result_row.update({
             "epoch": epoch + 1,
             "ep_time": time.time() - start_time,

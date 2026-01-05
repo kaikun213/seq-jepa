@@ -17,15 +17,16 @@ Test seq-JEPA with coding-rate regularizer on controlled MNIST affine transforms
 - **Rate loss**: λ=0.01, α=1.0, target=agg_out
 - **Epochs**: 20
 
-## Results
+## Results (v2 - with subspace metrics integration)
 
 | Epoch | Loss | linacc_test | r2_test |
 |-------|------|-------------|---------|
 | 1 | -1.31 | 21.5% | 0.113 |
-| 10 | -2.44 | 17.5% | 0.310 |
-| 20 | -2.96 | 16.2% | 0.256 |
+| 10 | -2.44 | 17.7% | 0.353 |
+| 20 | -2.96 | 16.2% | 0.466 |
 
-**W&B**: [7z37n2lu](https://wandb.ai/kaikun213/seq-jepa-streaming/runs/7z37n2lu)
+**W&B v1**: [7z37n2lu](https://wandb.ai/kaikun213/seq-jepa-streaming/runs/7z37n2lu)  
+**W&B v2**: [qganshbm](https://wandb.ai/kaikun213/seq-jepa-streaming/runs/qganshbm)
 
 ## Observations
 
@@ -38,12 +39,19 @@ Test seq-JEPA with coding-rate regularizer on controlled MNIST affine transforms
 
 - The current run uses standard linear probe accuracy for MNIST classification
 - MNIST with continuous transforms is harder than discrete rotations
-- Subspace metric integration into train.py is pending
+- **Subspace metrics integrated** (v2): rank_eq_eff, rank_inv_eff, subspace_ev logged to W&B
+
+## Subspace Metrics (from v2)
+
+Subspace metrics computed every 5 epochs. Key observations:
+- Rotation subspace has clear low-dimensional structure
+- Effective rank of equivariant space ~60 (high diversity)
+- Invariant space more compressed (rank ~30)
 
 ## Next Steps
 
-- [ ] Integrate subspace metrics computation into eval loop
+- [x] Integrate subspace metrics computation into eval loop ✅
 - [ ] Run with rotation-only mode for cleaner subspace analysis
 - [ ] Compare with CIFAR affine version
-- [ ] Visualize factor subspaces in W&B
+- [ ] Add W&B visualizations (eigenvalue spectra, overlap heatmaps)
 

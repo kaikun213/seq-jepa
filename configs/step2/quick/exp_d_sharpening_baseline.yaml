@@ -1,0 +1,73 @@
+# Experiment D: DINO Sharpening (centering + temperature)
+# Tests if DINO-style sharpening helps teacherless training
+
+run:
+  name: step2-exp-d-sharpening-baseline-lite
+  seed: 42
+  device: auto
+  mps_fallback: true
+  epochs: 10
+  output_dir: runs/step2/exp-d-sharpening-baseline-lite
+  drop_last: true
+
+dataset:
+  name: cifar10_rot
+  data_root: data
+  seq_len: 3
+  rotations: [0, 90, 180, 270]
+  download: true
+  subset_train: 20000
+  subset_val: 2000
+  subset_seed: 42
+  batch_size: 128
+  num_workers: 0
+
+model:
+  img_size: 32
+  n_channels: 3
+  ema: false                         # TEACHERLESS
+  ema_decay: 0.996
+  teacherless: true
+  sharpening_enabled: true           # Enable DINO sharpening
+  sharpening_temp: 0.04              # Low temperature for sharpening
+  sharpening_center_momentum: 0.9    # Centering momentum
+  pred_hidden: 1024
+  num_heads: 4
+  num_enc_layers: 3
+  act_cond: 1
+  learn_act_emb: 1
+  act_latentdim: 2
+  act_projdim: 128
+  cifar_resnet: true
+
+loss:
+  rate_loss_enabled: true
+  lambda_rate: 0.03                  # Tuned for stop-grad
+  alpha: 1.0
+  rate_target: agg_out
+
+optim:
+  lr: 0.001
+  weight_decay: 0.0
+  probe_lr: 0.001
+  scheduler: cosine                  # Cosine LR (crucial for teacherless)
+  warmup_epochs: 2
+  min_lr: 0.00001
+
+eval:
+  latent_type: rot
+  eval_type: rot
+  subspace_enabled: true
+  subspace_frequency: 5
+
+logging:
+  wandb:
+    enabled: true
+    project: seq-jepa-streaming
+    group: step2-exp-d-sharpening
+    mode: online
+
+gating:
+  linacc_test_min: 30.0
+  r2_test_min: 0.1
+

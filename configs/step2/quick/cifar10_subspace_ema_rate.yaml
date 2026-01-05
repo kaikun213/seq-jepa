@@ -1,0 +1,69 @@
+# CIFAR-10 Rotation with Subspace Metrics: EMA + Rate Loss
+# Purpose: Test subspace metrics integration on discrete rotations
+
+run:
+  name: step2-cifar10-subspace-ema-rate
+  seed: 42
+  device: auto
+  mps_fallback: true
+  epochs: 5
+  output_dir: runs/step2/cifar10-subspace-ema-rate
+  drop_last: true
+
+dataset:
+  name: cifar10_rot
+  data_root: data
+  seq_len: 3
+  rotations: [0, 90, 180, 270]
+  download: true
+  subset_train: 5000
+  subset_val: 1000
+  subset_seed: 42
+  batch_size: 64
+  num_workers: 0
+
+model:
+  img_size: 32
+  n_channels: 3
+  ema: true
+  ema_decay: 0.996
+  teacherless: false
+  pred_hidden: 1024
+  num_heads: 4
+  num_enc_layers: 3
+  act_cond: 1
+  learn_act_emb: 1
+  act_latentdim: 2
+  act_projdim: 128
+  cifar_resnet: true
+
+loss:
+  rate_loss_enabled: true
+  lambda_rate: 0.01
+  alpha: 1.0
+  rate_target: agg_out
+
+optim:
+  lr: 0.001
+  weight_decay: 0.0
+  probe_lr: 0.001
+
+eval:
+  latent_type: rot
+  eval_type: rot
+  # Enable subspace metrics
+  subspace_enabled: true
+  subspace_frequency: 1         # Every epoch
+  subspace_viz: false
+
+logging:
+  wandb:
+    enabled: true
+    project: seq-jepa-streaming
+    group: step2-subspace
+    mode: online
+
+gating:
+  linacc_test_min: 20.0
+  r2_test_min: 0.0
+

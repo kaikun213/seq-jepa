@@ -4,15 +4,15 @@ Last updated: 2026-01-05
 
 ## Current Focus
 
-**Active Step**: Step 2 - Teacherless Rate (Exp A ✓, Exp B tuned ✓, MNIST subspace ✓)  
-**Next Step**: Integrate subspace metrics into eval, run Exp C-E, then remote baselines
+**Active Step**: Step 2 - Teacherless Rate (Exp A-D complete, ready for remote)  
+**Next Step**: CRATE integration (Exp E), then remote baselines on CIFAR-100
 
 ## Milestone Status
 
 | Milestone | Status | Progress | Notes |
 |-----------|--------|----------|-------|
 | M1 (Baseline) | 🟡 In Progress | 95% | Paper-aligned CIFAR-100 run in progress |
-| M2 (Teacherless) | 🟡 In Progress | 75% | Exp A ✓, Exp B tuned ✓, MNIST subspace initial run ✓ |
+| M2 (Teacherless) | 🟡 In Progress | 85% | Exp A-D ✓, subspace integrated, CRATE pending |
 | M3 (CRATE) | ⚪ Not Started | 0% | |
 | M4 (ToST) | ⚪ Not Started | 0% | |
 | M5 (Streaming) | ⚪ Not Started | 0% | |
@@ -24,7 +24,7 @@ Last updated: 2026-01-05
 |------|--------|-----------------|
 | Step 0 - Repo Setup | ✅ Complete | — |
 | Step 1 - Baseline Repro | 🟡 In Progress | Paper-aligned run in progress; eval pending |
-| Step 2 - Teacherless Rate | 🟡 In Progress | Exp A ✓, Exp B tuned ✓, subspace pending |
+| Step 2 - Teacherless Rate | 🟡 In Progress | Exp A-D ✓, subspace ✓, CRATE pending |
 | Step 3 - CRATE Integration | ⚪ Pending | |
 | Step 4 - ToST Streaming | ⚪ Pending | |
 | Step 5 - Streaming Continual | ⚪ Pending | |
@@ -51,7 +51,14 @@ Last updated: 2026-01-05
   2. Stop-grad needs cosine LR + warmup for stability
   3. λ_rate=0.03 is optimal (0.01 too weak, 0.1 too strong)
 - **Created experiment logs**: `step-2-exp-a-ema-rate.md`, `step-2-exp-b-stopgrad.md`, `step-2-mnist-subspace.md`
-- **Remaining**: Integrate subspace metrics into eval loop, run Exp C-E, remote baselines
+- **Exp C (Symmetric)**: linacc 33.3%, r2 0.42 ✅ (no clear benefit vs baseline)
+  - W&B: [hj0seblj](https://wandb.ai/kaikun213/seq-jepa-streaming/runs/hj0seblj)
+- **Exp D (Sharpening)**: linacc 27.4%, r2 0.21 ❌ (sharpening hurts with cosine loss)
+  - W&B: [yigdlml4](https://wandb.ai/kaikun213/seq-jepa-streaming/runs/yigdlml4)
+- **Subspace metrics integrated**: rank_eq_eff, rank_inv_eff, subspace_ev, etc. logged to W&B
+- **MNIST Subspace (v2)**: r2 0.47 (strong equivariance learning)
+  - W&B: [qganshbm](https://wandb.ai/kaikun213/seq-jepa-streaming/runs/qganshbm)
+- **Remaining**: CRATE components (Exp E), remote baselines
 
 ### 2026-01-04
 - Reorganized documentation structure into subdirectories
